@@ -1,1 +1,24 @@
+# 가상환경
+hearim/
+
+# 데이터
+data/raw/resolutions/*
+data/processed/chroma_db/*
+!data/raw/resolutions/.gitkeep
+!data/processed/chroma_db/.gitkeep
+
+# 환경변수
 .env
+
+# 파이썬
+__pycache__/
+*.pyc
+*.pyo
+
+# 모델 캐시
+.cache/
+huggingface/
+
+# 에이전트/MCP
+backend/agents/
+backend/mcp/
