@@ -113,6 +113,65 @@ result = asyncio.get_event_loop().run_until_complete(
 result_json = result.model_dump_json()
 ```
 
+## 전체 서비스 흐름
+
+```
+웹 (질문화면.html)
+        ↓ POST /diagnose { user_query, situation_type }
+FastAPI (routes.py)
+        ↓
+pipeline.run()
+        ↓
+RAGOutput (의결서 5개 + QA 3개)
+        ↓
+에이전트 (이승건 담당)
+        ↓
+Final Report
+        ↓
+웹 (결과화면.html)
+```
+
+---
+
+## 서버 실행
+
+**1. 백엔드 서버 실행**
+
+`backend/` 폴더에서 실행
+
+```cmd
+cd backend
+uvicorn main:app --reload
+```
+
+**2. 프론트엔드 접속**
+
+브라우저에서
+
+```
+http://localhost:8000/질문화면.html
+```
+
+---
+
+## 진행 상황
+
+```
+✅ RAG 파이프라인 구현 완료
+   - Query Processor, Hybrid Search, Reranker, LLM Filter, Scenario DB
+
+✅ FastAPI 서버 연결 완료
+   - POST /diagnose 엔드포인트
+   - 질문화면.html → API 호출 → RAGOutput 반환
+
+✅ 프론트엔드 연결 완료
+   - 질문 입력 + 상황유형 선택 → 진단 시작 → 결과화면 이동
+
+⏳ 에이전트 연결 대기 (이승건 담당)
+   - routes.py에서 run_agents(rag_result) 호출 예정
+   - RAGOutput → 에이전트 → ReportOutput → 웹 반환
+```
+
 ### situation_type 종류
 
 | 한글 | 영어 |
