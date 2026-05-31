@@ -6,9 +6,8 @@ from abc import ABC, abstractmethod
 
 from openai import OpenAI
 
-from ..models import AgentReport, ExternalEvidence, RewrittenQuery
+from ..models import AgentReport, ExternalEvidence
 
-# 구조화된 응답을 강제하는 공통 툴 스키마
 REPORT_TOOL = {
     "type": "function",
     "function": {
@@ -44,23 +43,42 @@ REPORT_TOOL = {
 
 
 def _format_evidence(evidence: ExternalEvidence) -> str:
-    """ExternalEvidence를 Claude에게 전달할 텍스트로 변환합니다."""
+    """ExternalEvidence 전체를 Claude에게 전달할 텍스트로 변환합니다."""
     parts = []
 
+    if evidence.resolution_chunks:
+        parts.append("## RAG 검색 의결서 청크")
+        for doc in evidence.resolution_chunks:
+            header = doc.title or "(제목 없음)"
+            if doc.score is not None:
+                header += f" (관련도: {doc.score:.3f})"
+            parts.append(f"### {header}")
+            parts.append(doc.content[:3000])
+
+    if evidence.scenario_docs:
+        parts.append("## 유사 시나리오 Q&A")
+        for doc in evidence.scenario_docs:
+            parts.append(f"**Q: {doc.question}**")
+            parts.append(f"A: {doc.answer}")
+            if doc.legal_interpretation:
+                parts.append(f"법적 해석: {doc.legal_interpretation}")
+            if doc.evidence:
+                parts.append(f"근거: {doc.evidence}")
+
     if evidence.laws:
-        parts.append("## 관련 법령")
+        parts.append("## MCP 검색 법령")
         for doc in evidence.laws:
             parts.append(f"### {doc.title or '(제목 없음)'}")
             parts.append(doc.content[:3000])
 
     if evidence.precedents:
-        parts.append("## 관련 판례")
+        parts.append("## MCP 검색 판례")
         for doc in evidence.precedents:
             parts.append(f"### {doc.title or '(제목 없음)'}")
             parts.append(doc.content[:3000])
 
     if evidence.ftc_decisions:
-        parts.append("## 공정위 결정문")
+        parts.append("## MCP 검색 공정위 결정문")
         for doc in evidence.ftc_decisions:
             parts.append(f"### {doc.title or '(제목 없음)'}")
             parts.append(doc.content[:3000])
@@ -81,11 +99,16 @@ class BaseAgent(ABC):
     def system_prompt(self) -> str:
         ...
 
-    def analyze(self, query: RewrittenQuery, evidence: ExternalEvidence) -> AgentReport:
+    def analyze(
+        self,
+        original_query: str,
+        rewritten_query: str,
+        evidence: ExternalEvidence,
+    ) -> AgentReport:
         evidence_text = _format_evidence(evidence)
         user_message = (
-            f"## 분석 대상 질문\n{query.rewritten}\n\n"
-            f"## 법률 쟁점\n" + "\n".join(f"- {i}" for i in query.intent.legal_issues) + "\n\n"
+            f"## 원본 질문\n{original_query}\n\n"
+            f"## 분석 대상 질문 (재작성)\n{rewritten_query}\n\n"
             f"## 외부 자료\n{evidence_text}"
         )
 

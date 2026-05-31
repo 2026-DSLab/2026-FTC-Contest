@@ -1,5 +1,5 @@
 """
-종합 분석 에이전트 (Step 5)
+종합 분석 에이전트 (최종 단계)
 4개 에이전트의 보고서와 Confidence Score를 종합하여 최종 레포트를 생성합니다.
 """
 from __future__ import annotations
@@ -8,7 +8,7 @@ import json
 
 from openai import OpenAI
 
-from ..models import AgentReport, FinalReport, RewrittenQuery
+from ..models import AgentReport, FinalReport
 
 # ──────────────────────────────────────────────
 # 프롬프트 수정 포인트 ▼
@@ -72,13 +72,15 @@ _SYNTHESIS_TOOL = {
 def _format_agent_reports(reports: list[AgentReport]) -> str:
     parts = []
     for r in reports:
-        score_bar = "█" * (r.confidence_score // 10) + "░" * (10 - r.confidence_score // 10)
-        parts.append(
-            f"## {r.agent_name} (신뢰도: {r.confidence_score}/100 [{score_bar}])\n\n"
+        bar = "█" * (r.confidence_score // 10) + "░" * (10 - r.confidence_score // 10)
+        section = (
+            f"## {r.agent_name} (신뢰도: {r.confidence_score}/100 [{bar}])\n\n"
             f"{r.analysis}\n\n"
             f"**핵심 발견:**\n" + "\n".join(f"- {f}" for f in r.key_findings)
-            + (f"\n\n**한계:** {r.limitations}" if r.limitations else "")
         )
+        if r.limitations:
+            section += f"\n\n**한계:** {r.limitations}"
+        parts.append(section)
     return "\n\n---\n\n".join(parts)
 
 
@@ -89,14 +91,16 @@ class SynthesisAgent:
 
     def synthesize(
         self,
-        query: RewrittenQuery,
+        original_query: str,
+        rewritten_query: str,
+        situation_type: str,
         agent_reports: list[AgentReport],
     ) -> FinalReport:
         reports_text = _format_agent_reports(agent_reports)
         user_message = (
-            f"## 원본 질문\n{query.original}\n\n"
-            f"## 재작성 질문\n{query.rewritten}\n\n"
-            f"## 법률 쟁점\n" + "\n".join(f"- {i}" for i in query.intent.legal_issues) + "\n\n"
+            f"## 원본 질문\n{original_query}\n\n"
+            f"## 재작성 질문\n{rewritten_query}\n\n"
+            f"## 상황 유형\n{situation_type}\n\n"
             f"## 전문 에이전트 분석 보고서\n\n{reports_text}"
         )
 
@@ -114,10 +118,9 @@ class SynthesisAgent:
         data = json.loads(response.choices[0].message.tool_calls[0].function.arguments)
 
         return FinalReport(
-            original_query=query.original,
-            rewritten_query=query.rewritten,
-            intent_category=query.intent.category.value,
-            legal_issues=query.intent.legal_issues,
+            original_query=original_query,
+            rewritten_query=rewritten_query,
+            situation_type=situation_type,
             agent_reports=agent_reports,
             synthesis=data["synthesis"],
             overall_confidence=data["overall_confidence"],

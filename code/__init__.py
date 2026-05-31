@@ -1,4 +1,4 @@
 from .pipeline import LegalAnalysisPipeline
-from .models import FinalReport, RewrittenQuery, ExternalEvidence, AgentReport
+from .models import FinalReport, ExternalEvidence, AgentReport, SituationType
 
-__all__ = ["LegalAnalysisPipeline", "FinalReport", "RewrittenQuery", "ExternalEvidence", "AgentReport"]
+__all__ = ["LegalAnalysisPipeline", "FinalReport", "ExternalEvidence", "AgentReport", "SituationType"]

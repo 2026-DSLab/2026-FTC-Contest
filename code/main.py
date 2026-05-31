@@ -1,14 +1,13 @@
 """
 CLI 진입점
 사용법:
-  python -m code.main "질문 내용"
-  python -m code.main "질문 내용" --no-parallel
+  python -m code.main "질문 내용" --situation 위반 의심 사항
+  python -m code.main "질문 내용" --situation "거래 진행 중" --no-parallel
   python -m code.main "질문 내용" --output report.json
 """
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
@@ -16,7 +15,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from .models import SituationType
 from .pipeline import LegalAnalysisPipeline
+
+SITUATION_CHOICES = [s.value for s in SituationType]
 
 
 def _print_final_report(report) -> None:
@@ -26,10 +28,7 @@ def _print_final_report(report) -> None:
     print(divider)
     print(f"\n[질문]\n{report.original_query}")
     print(f"\n[재작성 질문]\n{report.rewritten_query}")
-    print(f"\n[의도 분류] {report.intent_category}")
-    print(f"\n[법률 쟁점]")
-    for issue in report.legal_issues:
-        print(f"  - {issue}")
+    print(f"\n[상황 유형] {report.situation_type}")
 
     print(f"\n{'-' * 70}")
     print(f"  에이전트별 분석 요약")
@@ -60,6 +59,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="공정거래 법률 분석 파이프라인")
     parser.add_argument("query", nargs="?", help="분석할 법률 질문")
     parser.add_argument(
+        "--situation",
+        choices=SITUATION_CHOICES,
+        default=SituationType.SUSPECTED.value,
+        metavar="TYPE",
+        help=(
+            f"상황 유형 선택 (기본: {SituationType.SUSPECTED.value})\n"
+            f"선택지: {' | '.join(SITUATION_CHOICES)}"
+        ),
+    )
+    parser.add_argument(
         "--no-parallel", action="store_true", help="에이전트를 순차적으로 실행 (기본: 병렬)"
     )
     parser.add_argument("--output", metavar="FILE", help="결과를 JSON 파일로 저장")
@@ -83,12 +92,14 @@ def main() -> None:
         print("질문이 입력되지 않았습니다.", file=sys.stderr)
         sys.exit(1)
 
+    situation = SituationType(args.situation)
+
     try:
         pipeline = LegalAnalysisPipeline(
             model=args.model,
             parallel_agents=not args.no_parallel,
         )
-        report = pipeline.run(query, verbose=True)
+        report = pipeline.run(query, situation_type=situation, verbose=True)
         _print_final_report(report)
 
         if args.output:

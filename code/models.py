@@ -6,43 +6,54 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
-class IntentCategory(str, Enum):
-    UNFAIR_TRADE = "불공정거래행위"
-    MARKET_DOMINANT = "시장지배적지위남용"
-    MERGER = "기업결합"
-    CARTEL = "부당공동행위"
-    CONSUMER_PROTECTION = "소비자보호"
-    CONTRACT = "계약거래일반"
-    OTHER = "기타"
+class SituationType(str, Enum):
+    SUSPECTED = "위반 의심 사항"
+    IN_PROGRESS = "거래 진행 중"
+    CONTRACT_BEFORE = "계약 체결 전"
+    REGULAR_CHECK = "정기 점검"
+
+    def to_rag_key(self) -> str:
+        """RAG ScenarioDB가 기대하는 영문 키로 변환"""
+        return {
+            "위반 의심 사항": "suspected",
+            "거래 진행 중": "in_progress",
+            "계약 체결 전": "contract_before",
+            "정기 점검": "regular_check",
+        }[self.value]
 
 
-class QueryIntent(BaseModel):
-    category: IntentCategory
-    sub_intent: str
-    legal_issues: list[str]
-
-
-class RewrittenQuery(BaseModel):
-    original: str
-    rewritten: str
-    intent: QueryIntent
-    search_keywords: list[str]
+class ScenarioDoc(BaseModel):
+    """RAG ScenarioDB에서 반환하는 QA 문서"""
+    question: str
+    answer: str
+    legal_interpretation: str
+    evidence: str
+    situation_type: str
 
 
 class LawDocument(BaseModel):
-    doc_type: str  # "law" | "precedent" | "ftc_decision"
+    doc_type: str  # "law" | "precedent" | "ftc_decision" | "resolution_chunk"
     title: str
     content: str
     source_id: Optional[str] = None
+    score: Optional[float] = None
 
 
 class ExternalEvidence(BaseModel):
     laws: list[LawDocument] = Field(default_factory=list)
     precedents: list[LawDocument] = Field(default_factory=list)
     ftc_decisions: list[LawDocument] = Field(default_factory=list)
+    resolution_chunks: list[LawDocument] = Field(default_factory=list)  # RAG 의결서 청크
+    scenario_docs: list[ScenarioDoc] = Field(default_factory=list)       # RAG 시나리오 QA
 
     def is_empty(self) -> bool:
-        return not self.laws and not self.precedents and not self.ftc_decisions
+        return (
+            not self.laws
+            and not self.precedents
+            and not self.ftc_decisions
+            and not self.resolution_chunks
+            and not self.scenario_docs
+        )
 
 
 class AgentReport(BaseModel):
@@ -57,8 +68,7 @@ class AgentReport(BaseModel):
 class FinalReport(BaseModel):
     original_query: str
     rewritten_query: str
-    intent_category: str
-    legal_issues: list[str]
+    situation_type: str
     agent_reports: list[AgentReport]
     synthesis: str
     overall_confidence: int = Field(ge=0, le=100)
