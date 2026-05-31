@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>진단 결과 (더미)</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 2rem;
+    }
+    h2 {
+      color: #9cdcfe;
+      margin-bottom: 1rem;
+    }
+    pre {
+      background: #252526;
+      padding: 1.5rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .back-btn {
+      display: inline-block;
+      margin-bottom: 1rem;
+      padding: 8px 16px;
+      background: #0051c7;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <button class="back-btn" onclick="history.back()">← 뒤로</button>
+  <h2>RAG Output (JSON)</h2>
+  <pre id="result"></pre>
+
+  <script>
+    const result = sessionStorage.getItem('diagnoseResult');
+    if (result) {
+      document.getElementById('result').textContent = JSON.stringify(JSON.parse(result), null, 2);
+    } else {
+      document.getElementById('result').textContent = '결과 없음';
+    }
+  </script>
+</body>
+</html>

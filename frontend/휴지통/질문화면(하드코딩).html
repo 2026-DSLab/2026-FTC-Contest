@@ -64,6 +64,8 @@
       overflow-x: hidden;
     }
 
+    /* Background removed for clean white base */
+
     /* ===== Header ===== */
     header {
       position: relative;
@@ -128,6 +130,8 @@
       background: var(--blue-50);
       color: var(--blue-600);
     }
+
+
 
     /* ===== Main Content ===== */
     main {
@@ -237,31 +241,30 @@
     .situation-btn:hover {
       border-color: var(--blue-300);
       color: var(--blue-600);
+      background: var(--blue-50);
     }
 
     .situation-btn.active {
+      border-color: var(--blue-500);
       background: var(--blue-50);
-      border-color: var(--blue-400);
       color: var(--blue-600);
+      font-weight: 600;
     }
 
-    /* ===== Input Card ===== */
+    /* ===== Input Area ===== */
     .input-card {
       width: 100%;
       max-width: 720px;
-      background: var(--white);
-      border: 1px solid var(--gray-200);
-      border-radius: var(--radius-xl);
-      padding: 1.5rem;
-      box-shadow: var(--shadow-md);
+      background: transparent;
+      padding: 0;
       animation: fadeInUp 0.7s ease-out 0.1s both;
     }
 
     .input-label {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 0.82rem;
+      gap: 8px;
+      font-size: 0.85rem;
       font-weight: 600;
       color: var(--gray-700);
       margin-bottom: 0.75rem;
@@ -275,65 +278,78 @@
 
     .textarea-wrapper {
       position: relative;
-      margin-bottom: 1rem;
-    }
-
-    textarea {
-      width: 100%;
-      min-height: 120px;
-      padding: 0.875rem 1rem;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
       border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
-      font-family: 'Noto Sans KR', 'Inter', sans-serif;
-      font-size: 0.9rem;
-      color: var(--gray-800);
-      line-height: 1.6;
-      resize: vertical;
-      outline: none;
       transition: border-color var(--transition), box-shadow var(--transition);
       background: var(--gray-50);
     }
 
-    textarea:focus {
+    .textarea-wrapper:focus-within {
       border-color: var(--blue-400);
       box-shadow: 0 0 0 3px rgba(43, 125, 233, 0.1);
       background: var(--white);
     }
 
+    #question-input {
+      width: 100%;
+      min-height: 160px;
+      padding: 1.25rem;
+      font-family: 'Noto Sans KR', 'Inter', sans-serif;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--gray-800);
+      border: none;
+      outline: none;
+      resize: vertical;
+      background: transparent;
+    }
+
+    #question-input::placeholder {
+      color: var(--gray-400);
+    }
+
     .textarea-footer {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-top: 0.4rem;
-      padding: 0 0.25rem;
+      justify-content: space-between;
+      padding: 0.5rem 1.25rem 0.75rem;
+      background: transparent;
     }
 
     .char-count {
       font-size: 0.75rem;
       color: var(--gray-400);
+      font-weight: 400;
     }
 
     .textarea-hint {
-      font-size: 0.72rem;
-      color: var(--gray-400);
       display: flex;
       align-items: center;
       gap: 4px;
+      font-size: 0.75rem;
+      color: var(--gray-400);
     }
 
-    kbd {
-      padding: 1px 5px;
+    .textarea-hint kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 6px;
       background: var(--gray-100);
-      border: 1px solid var(--gray-300);
+      border: 1px solid var(--gray-200);
       border-radius: 4px;
-      font-size: 0.68rem;
-      font-family: monospace;
+      font-size: 0.7rem;
+      font-family: 'Inter', monospace;
+      color: var(--gray-500);
     }
 
+    /* ===== Submit Button ===== */
     .submit-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      margin-top: 1.25rem;
       gap: 1rem;
     }
 
@@ -355,100 +371,147 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 22px;
-      background: var(--blue-500);
+      padding: 14px 32px;
+      background: linear-gradient(135deg, var(--blue-500), var(--blue-700));
       color: var(--white);
       border: none;
       border-radius: var(--radius-md);
       font-family: 'Noto Sans KR', 'Inter', sans-serif;
-      font-size: 0.88rem;
+      font-size: 0.95rem;
       font-weight: 600;
       cursor: pointer;
       transition: all var(--transition);
-      white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(43, 125, 233, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #submit-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      transition: left 0.5s ease;
     }
 
     #submit-btn:hover {
-      background: var(--blue-600);
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(43, 125, 233, 0.3);
+      box-shadow: 0 6px 20px rgba(43, 125, 233, 0.4);
     }
 
-    #submit-btn:disabled {
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
+    #submit-btn:hover::before {
+      left: 100%;
+    }
+
+    #submit-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(43, 125, 233, 0.3);
     }
 
     #submit-btn svg {
       width: 18px;
       height: 18px;
+      transition: transform 0.2s ease;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .spin {
-      animation: spin 1s linear infinite;
+    #submit-btn:hover svg {
+      transform: translateX(2px);
     }
 
     /* ===== Data Sources ===== */
     .data-sources {
       width: 100%;
       max-width: 720px;
-      margin-top: 1.5rem;
-      animation: fadeInUp 0.75s ease-out 0.15s both;
+      margin-top: 2rem;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
     }
 
     .sources-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       font-size: 0.75rem;
-      font-weight: 500;
       color: var(--gray-400);
-      margin-bottom: 0.6rem;
+      font-weight: 500;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.75rem;
+    }
+
+    .sources-label::before,
+    .sources-label::after {
+      content: '';
+      flex: 1;
+      max-width: 80px;
+      height: 1px;
+      background: var(--gray-200);
     }
 
     .sources-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+      gap: 12px;
     }
 
     .source-card {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 10px 12px;
-      background: var(--gray-50);
-      border: 1px solid var(--gray-100);
-      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      transition: all var(--transition);
+      cursor: default;
+    }
+
+    .source-card:hover {
+      opacity: 0.8;
     }
 
     .source-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
     }
 
-    .source-icon svg {
-      width: 16px;
-      height: 16px;
+    .source-icon.blue {
+      background: var(--blue-50);
+      color: var(--blue-500);
     }
 
-    .source-icon.blue { background: var(--blue-50); color: var(--blue-500); }
-    .source-icon.green { background: var(--green-50); color: var(--green-500); }
-    .source-icon.purple { background: #f3f0ff; color: #7c3aed; }
+    .source-icon.green {
+      background: var(--green-50);
+      color: var(--green-500);
+    }
 
-    .source-info { flex: 1; min-width: 0; }
+    .source-icon.purple {
+      background: #f3f0ff;
+      color: #6b5ce7;
+    }
+
+    .source-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .source-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
 
     .source-name {
-      font-size: 0.78rem;
+      font-size: 0.8rem;
       font-weight: 600;
       color: var(--gray-700);
       white-space: nowrap;
@@ -459,55 +522,84 @@
     .source-desc {
       font-size: 0.7rem;
       color: var(--gray-400);
-      margin-top: 1px;
+      font-weight: 400;
     }
 
-    /* ===== Error message ===== */
-    #error-msg {
-      display: none;
-      width: 100%;
-      max-width: 720px;
-      margin-top: 1rem;
-      padding: 12px 16px;
-      background: #fff0f0;
-      border: 1px solid #ffc0c0;
-      border-radius: var(--radius-md);
-      color: #c0392b;
-      font-size: 0.85rem;
+    .source-status {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green-500);
+      margin-left: auto;
+      flex-shrink: 0;
     }
 
     /* ===== Footer ===== */
     footer {
+      position: relative;
+      z-index: 1;
       text-align: center;
-      padding: 1.25rem 1.5rem;
+      padding: 1.5rem;
       font-size: 0.75rem;
       color: var(--gray-400);
-      border-top: 1px solid var(--gray-100);
     }
 
     footer a {
-      color: var(--gray-400);
+      color: var(--gray-500);
       text-decoration: none;
+      transition: color var(--transition);
     }
 
     footer a:hover {
-      color: var(--gray-600);
+      color: var(--blue-500);
     }
 
+    /* ===== Responsive ===== */
     @media (max-width: 768px) {
-      .header-nav { display: none; }
-      .hero-title { font-size: 1.5rem; }
-      .hero-desc { font-size: 0.9rem; }
-      .input-card { padding: 1.25rem; }
-      .sources-grid { grid-template-columns: 1fr; }
-      .submit-row { flex-direction: column; align-items: stretch; }
-      .example-hint { justify-content: center; order: 2; }
-      #submit-btn { justify-content: center; order: 1; }
+      .header-nav {
+        display: none;
+      }
+
+      .hero-title {
+        font-size: 1.5rem;
+      }
+
+      .hero-desc {
+        font-size: 0.9rem;
+      }
+
+      .input-card {
+        padding: 1.25rem;
+      }
+
+      .sources-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .submit-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .example-hint {
+        justify-content: center;
+        order: 2;
+      }
+
+      #submit-btn {
+        justify-content: center;
+        order: 1;
+      }
     }
 
     @media (max-width: 480px) {
-      main { padding: 2rem 1rem 1.5rem; }
-      .hero-title { font-size: 1.3rem; }
+      main {
+        padding: 2rem 1rem 1.5rem;
+      }
+
+      .hero-title {
+        font-size: 1.3rem;
+      }
     }
   </style>
 </head>
@@ -525,6 +617,7 @@
         <button class="nav-pill active" id="nav-consult">상담</button>
         <button class="nav-pill" id="nav-history">이력</button>
         <button class="nav-pill" id="nav-guide">가이드</button>
+
       </div>
     </div>
   </header>
@@ -546,10 +639,10 @@
     <div class="situation-selector">
       <div class="situation-label">상황 유형 선택</div>
       <div class="situation-buttons">
-        <button class="situation-btn" data-type="contract_before">계약 체결 전</button>
-        <button class="situation-btn" data-type="in_progress">거래 진행 중</button>
-        <button class="situation-btn active" data-type="suspected">위반 의심</button>
-        <button class="situation-btn" data-type="regular_check">정기 점검</button>
+        <button class="situation-btn" data-type="before-contract">계약 체결 전</button>
+        <button class="situation-btn" data-type="in-progress">거래 진행 중</button>
+        <button class="situation-btn" data-type="suspected">위반 의심</button>
+        <button class="situation-btn" data-type="routine-check">정기 점검</button>
       </div>
     </div>
 
@@ -564,9 +657,9 @@
         <textarea
           id="question-input"
           placeholder="현재 기업이 처한 거래 상황을 자연어로 입력하세요"
-        ></textarea>
+        >납품업체와 계약 후 단가를 10% 줄이려고 합니다. 법적으로 문제가 될까요?</textarea>
         <div class="textarea-footer">
-          <span class="char-count" id="char-count">0자</span>
+          <span class="char-count" id="char-count">39자</span>
           <span class="textarea-hint">
             <kbd>Shift</kbd> + <kbd>Enter</kbd> 줄바꿈
           </span>
@@ -589,13 +682,11 @@
       </div>
     </div>
 
-    <div id="error-msg"></div>
-
     <!-- ===== Data Sources ===== -->
     <div class="data-sources">
       <div class="sources-label">데이터 소스</div>
       <div class="sources-grid">
-        <div class="source-card">
+        <div class="source-card" id="source-ftc">
           <div class="source-icon blue">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
@@ -605,8 +696,9 @@
             <div class="source-name">공정위 의결서 DB</div>
             <div class="source-desc">심결례 데이터베이스</div>
           </div>
+          <div class="source-status"></div>
         </div>
-        <div class="source-card">
+        <div class="source-card" id="source-qa">
           <div class="source-icon green">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
@@ -616,8 +708,9 @@
             <div class="source-name">컴플라이언스 QA DB</div>
             <div class="source-desc">질의응답 데이터</div>
           </div>
+          <div class="source-status"></div>
         </div>
-        <div class="source-card">
+        <div class="source-card" id="source-law">
           <div class="source-icon purple">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" />
@@ -627,6 +720,7 @@
             <div class="source-name">법령 API</div>
             <div class="source-desc">법령정보 연동</div>
           </div>
+          <div class="source-status"></div>
         </div>
       </div>
     </div>
@@ -640,19 +734,17 @@
 
   <!-- ===== Script ===== -->
   <script>
-    const API_URL = "http://localhost:8000/diagnose";
-
-    // 현재 선택된 situation_type
-    let selectedSituationType = "suspected";
-
     // Character count
     const textarea = document.getElementById('question-input');
     const charCount = document.getElementById('char-count');
 
     function updateCharCount() {
-      charCount.textContent = textarea.value.length + '자';
+      const len = textarea.value.length;
+      charCount.textContent = len + '자';
     }
+
     textarea.addEventListener('input', updateCharCount);
+    updateCharCount();
 
     // Situation type selector
     const situationBtns = document.querySelectorAll('.situation-btn');
@@ -660,22 +752,20 @@
       btn.addEventListener('click', function () {
         situationBtns.forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-        selectedSituationType = this.dataset.type;
       });
     });
 
-    // Submit
+    // Submit button interaction
     const submitBtn = document.getElementById('submit-btn');
-    const errorMsg = document.getElementById('error-msg');
-
-    submitBtn.addEventListener('click', async function () {
+    submitBtn.addEventListener('click', function () {
       const text = textarea.value.trim();
       if (!text) {
         textarea.focus();
+        textarea.classList.add('shake');
+        setTimeout(() => textarea.classList.remove('shake'), 500);
         return;
       }
-
-      // 로딩 상태
+      // Simulate loading
       submitBtn.disabled = true;
       submitBtn.innerHTML = `
         <svg class="spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;">
@@ -684,30 +774,9 @@
         분석 중...
       `;
       submitBtn.style.opacity = '0.8';
-      errorMsg.style.display = 'none';
 
-      try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user_query: text,
-            situation_type: selectedSituationType
-          })
-        });
-
-        if (!response.ok) throw new Error('서버 오류: ' + response.status);
-
-        const result = await response.json();
-
-        // 결과를 sessionStorage에 저장 후 결과 화면으로 이동
-        sessionStorage.setItem('diagnoseResult', JSON.stringify(result));
-        window.location.href = '결과화면_더미.html';
-
-      } catch (err) {
-        errorMsg.textContent = '오류가 발생했습니다: ' + err.message;
-        errorMsg.style.display = 'block';
-      } finally {
+      // Reset after 2s (demo)
+      setTimeout(() => {
         submitBtn.disabled = false;
         submitBtn.innerHTML = `
           진단 시작
@@ -716,10 +785,10 @@
           </svg>
         `;
         submitBtn.style.opacity = '1';
-      }
+      }, 2000);
     });
 
-    // Keyboard shortcut
+    // Keyboard shortcut: Enter to submit (without shift)
     textarea.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
