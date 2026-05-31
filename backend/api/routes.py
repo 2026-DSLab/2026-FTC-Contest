@@ -1,17 +1,34 @@
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+import asyncio
+import sys
+import os
+
+# 프로젝트 루트 기준 경로
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+sys.path.append(os.path.join(BASE_DIR, "backend"))
+
+from rag.pipeline import RAGPipeline
 from schemas.rag_output import RAGOutput
-from schemas.report_output import ReportOutput
-from rag.pipeline import run_rag_pipeline
 
 router = APIRouter()
 
+pipeline = RAGPipeline(
+    db_path=os.path.join(BASE_DIR, "data/processed/chroma_db"),
+    excel_path=os.path.join(BASE_DIR, "data/raw/scenarios.xlsx")
+)
 
-@router.post("/diagnose", response_model=ReportOutput)
-async def diagnose(user_query: str, situation_type: str):
-    # 1. RAG 파이프라인 실행 (서준원)
-    rag_output: RAGOutput = await run_rag_pipeline(user_query, situation_type)
+class DiagnoseRequest(BaseModel):
+    user_query: str
+    situation_type: str
 
-    # 2. 에이전트 실행 (이승건) - 추후 연결
-    # report = await run_agents(rag_output)
 
-    pass
+@router.post("/diagnose")
+async def diagnose(req: DiagnoseRequest):
+    result: RAGOutput = await pipeline.run(
+        user_query=req.user_query,
+        situation_type=req.situation_type
+    )
+    return JSONResponse(content=result.model_dump())
