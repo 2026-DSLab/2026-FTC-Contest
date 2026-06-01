@@ -10,6 +10,9 @@ data/processed/chroma_db/*
 # 환경변수
 .env
 
+# models
+models/
+
 # 파이썬
 __pycache__/
 *.pyc
@@ -19,6 +22,3 @@ __pycache__/
 .cache/
 huggingface/
 
-# 에이전트/MCP
-backend/agents/
-backend/mcp/

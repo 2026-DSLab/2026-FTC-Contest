@@ -82,10 +82,16 @@ RAGOutput (JSON) → 에이전트로 전달
 
 ---
 
-## 최초 DB 구축 (최초 1회만 실행)
+## 최초 실행 설정 (최초 1회만 실행)
 
+**1. 모델 다운로드**
 ```cmd
 conda activate hearim
+python scripts/download_models.py
+```
+
+**2. DB 구축**
+```cmd
 python scripts/build_db.py
 ```
 
