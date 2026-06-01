@@ -37,5 +37,10 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "../backend"))
 from rag.db.resolution_db import ResolutionDB
 
 if __name__ == "__main__":
-    db = ResolutionDB(db_path="data/processed/chroma_db")
+    from pathlib import Path
+    chroma_path = os.environ.get(
+        "CHROMA_DB_PATH",
+        str(Path.home() / "ftc_chroma_db"),
+    )
+    db = ResolutionDB(db_path=chroma_path)
     db.build(data_dir="data/raw/resolutions")

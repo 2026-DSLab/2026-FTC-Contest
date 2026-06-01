@@ -43,8 +43,8 @@ class ExternalEvidence(BaseModel):
     laws: list[LawDocument] = Field(default_factory=list)
     precedents: list[LawDocument] = Field(default_factory=list)
     ftc_decisions: list[LawDocument] = Field(default_factory=list)
-    resolution_chunks: list[LawDocument] = Field(default_factory=list)  # RAG 의결서 청크
-    scenario_docs: list[ScenarioDoc] = Field(default_factory=list)       # RAG 시나리오 QA
+    resolution_chunks: list[LawDocument] = Field(default_factory=list)
+    scenario_docs: list[ScenarioDoc] = Field(default_factory=list)
 
     def is_empty(self) -> bool:
         return (

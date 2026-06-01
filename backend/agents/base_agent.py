@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 
 from openai import OpenAI
 
-from ..models import AgentReport, ExternalEvidence
+from models import AgentReport, ExternalEvidence
 
 REPORT_TOOL = {
     "type": "function",

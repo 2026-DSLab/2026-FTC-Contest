@@ -12,22 +12,21 @@ from __future__ import annotations
 
 import asyncio
 import os
-import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from openai import OpenAI
 
-# backend/ 디렉토리를 sys.path에 추가 (RAG 모듈 import를 위해)
-_BACKEND_DIR = Path(__file__).parent.parent / "backend"
-if str(_BACKEND_DIR) not in sys.path:
-    sys.path.insert(0, str(_BACKEND_DIR))
+_PROJECT_ROOT = Path(__file__).parent.parent
+_DEFAULT_CHROMA_PATH = os.environ.get(
+    "CHROMA_DB_PATH",
+    str(Path.home() / "ftc_chroma_db"),
+)
 
-from rag.pipeline import RAGPipeline  # noqa: E402
-
-from .agents import CaseAgent, LawAgent, PrecedentAgent, ResolutionAgent, SynthesisAgent
-from .mcp_retriever import MCPRetriever
-from .models import (
+from rag.pipeline import RAGPipeline
+from agents import CaseAgent, LawAgent, PrecedentAgent, ResolutionAgent, SynthesisAgent
+from mcp_retriever import MCPRetriever
+from models import (
     AgentReport,
     ExternalEvidence,
     FinalReport,
@@ -84,8 +83,8 @@ class LegalAnalysisPipeline:
         openai_api_key: str | None = None,
         model: str = "gpt-4o-mini",
         parallel_agents: bool = True,
-        rag_db_path: str = "data/processed/chroma_db",
-        rag_excel_path: str = "data/raw/scenarios.xlsx",
+        rag_db_path: str = _DEFAULT_CHROMA_PATH,
+        rag_excel_path: str = str(_PROJECT_ROOT / "data/raw/scenarios.xlsx"),
     ):
         api_key = openai_api_key or os.environ.get("OPENAI_API_KEY")
         if not api_key:

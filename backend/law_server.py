@@ -31,7 +31,7 @@ def parse_xml_to_dict(xml_text: str) -> list[dict]:
         import re
         xml_text = re.sub(r'&(?!amp;|lt;|gt;|quot;|apos;)', '&amp;', xml_text)
         root = ET.fromstring(xml_text)
-    
+
     skip_tags = {"totalCnt", "pageSize", "pageIndex", "query", "numOfRows"}
     results = []
     for child in root:
@@ -48,16 +48,13 @@ async def fetch_api(base: str, params: dict) -> str:
     async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.get(base, params=params)
         resp.raise_for_status()
-        # 인코딩 명시적 지정
         content = resp.content
-        # EUC-KR로 먼저 시도, 실패하면 UTF-8
         for encoding in ["euc-kr", "utf-8", "cp949"]:
             try:
                 return content.decode(encoding)
             except UnicodeDecodeError:
                 continue
         return content.decode("utf-8", errors="replace")
-
 
 
 @app.list_tools()

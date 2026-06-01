@@ -12,7 +12,10 @@ class ResolutionDB:
     def __init__(self, db_path: str = "data/processed/chroma_db"):
         self.client = chromadb.PersistentClient(
             path=db_path,
-            settings=Settings(anonymized_telemetry=False),
+            settings=Settings(
+                anonymized_telemetry=False,
+                chroma_api_impl="chromadb.api.segment.SegmentAPI",
+            ),
         )
         self.collection = self.client.get_or_create_collection(
             name="resolutions",

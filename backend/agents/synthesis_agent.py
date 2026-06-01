@@ -8,7 +8,7 @@ import json
 
 from openai import OpenAI
 
-from ..models import AgentReport, FinalReport
+from models import AgentReport, FinalReport
 
 # ──────────────────────────────────────────────
 # 프롬프트 수정 포인트 ▼
@@ -115,16 +115,22 @@ class SynthesisAgent:
             ],
         )
 
-        data = json.loads(response.choices[0].message.tool_calls[0].function.arguments)
+        raw = response.choices[0].message.tool_calls[0].function.arguments
+        data = json.loads(raw)
+
+        avg_confidence = (
+            sum(r.confidence_score for r in agent_reports) // len(agent_reports)
+            if agent_reports else 50
+        )
 
         return FinalReport(
             original_query=original_query,
             rewritten_query=rewritten_query,
             situation_type=situation_type,
             agent_reports=agent_reports,
-            synthesis=data["synthesis"],
-            overall_confidence=data["overall_confidence"],
-            risk_level=data["risk_level"],
-            recommendations=data["recommendations"],
+            synthesis=data.get("synthesis", ""),
+            overall_confidence=data.get("overall_confidence", avg_confidence),
+            risk_level=data.get("risk_level", "보통"),
+            recommendations=data.get("recommendations", []),
             caveats=data.get("caveats") or None,
         )

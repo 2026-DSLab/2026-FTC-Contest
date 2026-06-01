@@ -14,9 +14,9 @@ from typing import Any
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from .models import ExternalEvidence, LawDocument
+from models import ExternalEvidence, LawDocument
 
-LAW_SERVER_PATH = Path(__file__).parent.parent / "law_server.py"
+LAW_SERVER_PATH = Path(__file__).parent / "law_server.py"
 
 # 검색 결과 개수 (필요시 조정)
 SEARCH_DISPLAY = 5
@@ -63,7 +63,7 @@ class MCPRetriever:
     async def retrieve(self, keywords: list[str]) -> ExternalEvidence:
         """키워드 목록으로 법령·판례·공정위 결정문을 검색하고 본문을 수집합니다."""
         evidence = ExternalEvidence()
-        query = " ".join(keywords[:3])  # 상위 3개 키워드 조합
+        query = " ".join(keywords[:3])
 
         async with stdio_client(self._server_params) as (read, write):
             async with ClientSession(read, write) as session:

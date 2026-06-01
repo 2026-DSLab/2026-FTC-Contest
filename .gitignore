@@ -19,6 +19,9 @@ __pycache__/
 .cache/
 huggingface/
 
-# 에이전트/MCP
-backend/agents/
-backend/mcp/
+# 분석 결과
+results/*.json
+!results/.gitkeep
+__pycache__/law_server.cpython-313.pyc
+__pycache__/mcp.cpython-313.pyc
+__pycache__/mcptest.cpython-313.pyc

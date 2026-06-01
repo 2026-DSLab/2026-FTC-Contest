@@ -9,14 +9,20 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from .models import SituationType
-from .pipeline import LegalAnalysisPipeline
+# backend/ 경로 추가
+_BACKEND_DIR = Path(__file__).parent.parent / "backend"
+if str(_BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_DIR))
+
+from models import SituationType
+from agent_pipeline import LegalAnalysisPipeline
 
 SITUATION_CHOICES = [s.value for s in SituationType]
 
@@ -102,12 +108,22 @@ def main() -> None:
         report = pipeline.run(query, situation_type=situation, verbose=True)
         _print_final_report(report)
 
+        # results/ 자동 저장
+        results_dir = Path(__file__).parent.parent / "results"
+        results_dir.mkdir(exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        auto_path = results_dir / f"{timestamp}.json"
+        auto_path.write_text(
+            report.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        print(f"결과 저장 완료: {auto_path}")
+
         if args.output:
             out_path = Path(args.output)
             out_path.write_text(
                 report.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8"
             )
-            print(f"결과 저장 완료: {out_path}")
+            print(f"결과 저장 완료 (추가): {out_path}")
 
     except KeyboardInterrupt:
         print("\n중단되었습니다.", file=sys.stderr)
