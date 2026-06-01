@@ -1,4 +1,3 @@
-# ScenarioDB 먼저 import (SSL 패치 전에)
 from rag.db.scenario_db import ScenarioDB
 from rag.query.query_processor import process_query
 from rag.retrieval.hybrid_search import HybridSearch
@@ -30,11 +29,11 @@ class RAGPipeline:
         print("2. 의결서 Hybrid Search 중...")
         hybrid_results = self.hybrid_search.search(
             query=rewritten_query,
-            top_k=20
+            top_k=10
         )
 
         print("3. Reranking 중...")
-        reranked = self.reranker.rerank(
+        reranked = await self.reranker.rerank_async(
             query=rewritten_query,
             docs=hybrid_results,
             top_k=10

@@ -4,40 +4,55 @@
 
 ```
 hearim/
+├── frontend/                       # 웹 화면
+│   ├── 질문화면.html                # 질문 입력 화면 (FastAPI 연결)
+│   ├── 결과화면_더미.html           # 더미 테스트용 (RAG JSON 출력)
+│   ├── 결과화면(예시).html          # 하드코딩 예시 화면
+│   └── 헤아림.jpg
+│
 ├── backend/
-│   ├── main.py                     # FastAPI 진입점
+│   ├── main.py                     # FastAPI 진입점 (서버 시작 + API 워밍업)
 │   ├── api/
-│   │   └── routes.py               # API 엔드포인트
+│   │   └── routes.py               # API 엔드포인트 (/diagnose)
 │   ├── rag/
 │   │   ├── pipeline.py             # 전체 RAG 파이프라인 (여기만 호출하면 됨)
 │   │   ├── query/
-│   │   │   └── query_processor.py  # 사용자 쿼리 재작성 + 의도 분류
+│   │   │   └── query_processor.py  # 사용자 쿼리 재작성 + 의도 분류 (gpt-4o-mini)
 │   │   ├── db/
 │   │   │   ├── resolution_db.py    # 의결서 Chroma DB 구축 및 조회
 │   │   │   └── scenario_db.py      # 엑셀 QA 로드 및 BM25 검색
 │   │   ├── ingestion/
-│   │   │   ├── embedder.py         # BGE-m3-ko 텍스트 임베딩
+│   │   │   ├── embedder.py         # BGE-m3-ko 텍스트 임베딩 (CUDA, fp16)
 │   │   │   └── excel_loader.py     # QA 엑셀 파일 로드 및 전처리
 │   │   └── retrieval/
 │   │       ├── hybrid_search.py    # Dense + BM25 하이브리드 검색 및 RRF 결합
-│   │       ├── reranker.py         # Cross-Encoder 기반 리랭킹
+│   │       ├── reranker.py         # Cross-Encoder 리랭킹 (CUDA, fp16, async)
 │   │       └── filter.py           # GPT-4o-mini 기반 LLM 시맨틱 필터링
 │   ├── schemas/
-│   │   ├── rag_output.py           # RAG 파이프라인 출력 스키마 (이승건 입력)
-│   │   └── report_output.py        # 에이전트 출력 스키마 (김용현 입력)
-│   └── agents/                     # 멀티에이전트 시스템
+│   │   ├── rag_output.py           # RAG 파이프라인 출력 스키마
+│   │   └── report_output.py        # 에이전트 출력 스키마
+│   └── agents/                     # 멀티에이전트 시스템 (이승건 담당)
 │
 ├── data/
 │   ├── raw/
-│   │   ├── resolutions/            # 의결서 원본 데이터
+│   │   ├── resolutions/            # 의결서 원본 데이터 (gitignore)
 │   │   │                           # 파일 구조: {제목}_hybrid.json + {제목}_metadata.json
-│   │   └── scenarios.xlsx          # 공정거래 QA 데이터셋 (500개)
+│   │   └── scenarios.xlsx          # 공정거래 QA 데이터셋 500개 (gitignore)
 │   └── processed/
-│       └── chroma_db/              # BGE-m3-ko 임베딩 벡터 DB (31,877개 청크)
+│       └── chroma_db/              # BGE-m3-ko 임베딩 벡터 DB 31,877개 청크 (gitignore)
 │
-└── scripts/
-    ├── build_db.py                 # 의결서 → Chroma DB 구축 스크립트 (최초 1회만 실행)
-    └── test_pipeline.py            # RAG 파이프라인 통합 테스트
+├── models/                         # 로컬 모델 저장소 (gitignore)
+│   ├── BGE-m3-ko/                  # 임베딩 모델
+│   └── ko-reranker/                # 리랭킹 모델
+│
+├── scripts/
+│   ├── build_db.py                 # 의결서 → Chroma DB 구축 (최초 1회)
+│   ├── download_models.py          # 모델 다운로드 (최초 1회)
+│   └── test_pipeline.py            # RAG 파이프라인 통합 테스트
+│
+├── .env
+├── .gitignore
+└── requirements.txt
 ```
 
 ---
@@ -82,10 +97,16 @@ RAGOutput (JSON) → 에이전트로 전달
 
 ---
 
-## 최초 DB 구축 (최초 1회만 실행)
+## 최초 실행 설정 (최초 1회만 실행)
 
+**1. 모델 다운로드**
 ```cmd
 conda activate hearim
+python scripts/download_models.py
+```
+
+**2. DB 구축**
+```cmd
 python scripts/build_db.py
 ```
 

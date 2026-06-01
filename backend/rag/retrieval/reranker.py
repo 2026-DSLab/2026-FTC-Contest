@@ -1,7 +1,7 @@
 import os
 import ssl
+import asyncio
 
-# 학교 네트워크 SSL 우회
 os.environ["CURL_CA_BUNDLE"] = ""
 os.environ["REQUESTS_CA_BUNDLE"] = ""
 os.environ["PYTHONHTTPSVERIFY"] = "0"
@@ -20,8 +20,6 @@ httpx.Client.__init__      = _patched_client
 httpx.AsyncClient.__init__ = _patched_async
 
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 _orig_session_init = requests.Session.__init__
 def _patched_session(self, *a, **kw):
     _orig_session_init(self, *a, **kw)
@@ -29,22 +27,42 @@ def _patched_session(self, *a, **kw):
 requests.Session.__init__ = _patched_session
 requests.packages.urllib3.disable_warnings()
 
+import torch
 from sentence_transformers import CrossEncoder
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+LOCAL_MODEL_PATH = os.path.join(BASE_DIR, "models", "ko-reranker")
+REMOTE_MODEL = "Dongjin-kr/ko-reranker"
 
 
 class Reranker:
     def __init__(self):
+        model_path = LOCAL_MODEL_PATH if os.path.exists(LOCAL_MODEL_PATH) else REMOTE_MODEL
+        print(f"리랭커 모델 로드: {model_path}")
         self.model = CrossEncoder(
-            "Dongjin-kr/ko-reranker",
-            device="cuda"
+            model_path,
+            device="cuda",
+            automodel_args={"torch_dtype": torch.float16}
         )
 
-    def rerank(self, query: str, docs: list[dict], top_k: int = 10) -> list[dict]:
+        # CUDA 워밍업
+        print("리랭커 워밍업 중...")
+        self.model.predict([("워밍업 쿼리", "워밍업 문서")])
+        print("리랭커 워밍업 완료")
+
+    def rerank(self, query: str, docs: list[dict], top_k: int = 5) -> list[dict]:
         pairs = [(query, doc["content"]) for doc in docs]
-        scores = self.model.predict(pairs)
+        scores = self.model.predict(pairs, batch_size=32)
 
         for i, doc in enumerate(docs):
             doc["rerank_score"] = float(scores[i])
 
         reranked = sorted(docs, key=lambda x: x["rerank_score"], reverse=True)[:top_k]
         return reranked
+
+    async def rerank_async(self, query: str, docs: list[dict], top_k: int = 5) -> list[dict]:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            None,
+            lambda: self.rerank(query, docs, top_k)
+        )
