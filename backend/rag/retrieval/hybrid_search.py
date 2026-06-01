@@ -8,18 +8,13 @@ from rag.ingestion.embedder import Embedder
 
 class HybridSearch:
     def __init__(self, db_path: str = "data/processed/chroma_db"):
-        # Chroma DB 연결
         self.client = chromadb.PersistentClient(
             path=db_path,
-            settings=Settings(
-                anonymized_telemetry=False,
-                chroma_api_impl="chromadb.api.segment.SegmentAPI",
-            ),
+            settings=Settings(anonymized_telemetry=False),
         )
         self.collection = self.client.get_collection("resolutions")
         self.embedder = Embedder()
 
-        # BM25용 전체 문서 로드
         print("BM25 인덱스 구축 중...")
         all_docs = self.collection.get(include=["documents", "metadatas"])
         self.all_ids = all_docs["ids"]
@@ -68,7 +63,7 @@ class HybridSearch:
             }
 
         # 3. RRF 결합
-        k = 60  # RRF 상수
+        k = 60
         all_ids = set(dense_docs.keys()) | set(bm25_docs.keys())
 
         rrf_scores = {}
