@@ -254,3 +254,61 @@ http://localhost:8000/질문화면.html
   ]
 }
 ```
+
+네 가능해요.
+
+---
+
+**용현 작업 관련 내용**
+
+**1. 서버 실행**
+```cmd
+cd backend
+uvicorn main:app --reload
+```
+
+브라우저에서 `http://localhost:8000/질문화면.html` 접속
+
+---
+
+**2. 흐름**
+```
+질문화면.html에서 질문 입력 + 상황유형 선택 → 진단 시작 버튼
+    ↓
+AI 분석 자동 실행 (30초~1분 소요)
+    ↓
+결과화면.html로 자동 이동
+    ↓
+sessionStorage에서 결과 JSON 꺼내서 화면에 출력
+```
+
+---
+
+**3. 결과 JSON 꺼내는 법**
+```javascript
+const result = JSON.parse(sessionStorage.getItem('diagnoseResult'));
+```
+
+---
+
+**4. 주요 필드**
+```javascript
+result.risk_level           // "낮음/보통/높음/매우 높음"
+result.overall_confidence   // 신뢰도 점수 (0~100)
+result.synthesis            // 종합 분석 텍스트
+result.recommendations      // 권고사항 배열 ["...", "..."]
+result.caveats              // 주의사항
+
+result.agent_reports        // 에이전트별 분석 배열
+  └ .agent_name             // 에이전트 이름
+  └ .analysis               // 분석 내용
+  └ .confidence_score       // 신뢰도 (0~100)
+  └ .key_findings           // 핵심 발견 배열 ["...", "..."]
+```
+
+---
+
+**5. 할 일**
+`결과화면(예시).html` 디자인에 위 필드들 연결해서 동적으로 출력하면 됨.
+
+현재 `결과화면_더미.html`이 JSON 그대로 출력하는 버전이니까 참고용으로 쓰면 됨.
