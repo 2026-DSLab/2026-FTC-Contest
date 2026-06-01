@@ -1,4 +1,8 @@
-# 헤아림 (Hearim) - RAG 파이프라인
+# 헤아림 (Hearim) — AI 공정거래 법률 분석 시스템
+
+사용자의 공정거래 법률 질문을 받아 내부 의결서 DB(RAG) + 외부 법령 API(MCP) + 다중 AI 에이전트를 결합하여 위반 위험도와 법리 해석을 제공하는 시스템입니다.
+
+---
 
 ## 프로젝트 구조
 
@@ -12,12 +16,23 @@ hearim/
 │
 ├── backend/
 │   ├── main.py                     # FastAPI 진입점 (서버 시작 + API 워밍업)
+│   ├── models.py                   # 공통 Pydantic 모델 (FinalReport 등)
+│   ├── agent_pipeline.py           # 전체 파이프라인 오케스트레이터
+│   ├── mcp_retriever.py            # 국가법령정보 API MCP 클라이언트
+│   ├── law_server.py               # MCP 서버 (subprocess로 실행)
 │   ├── api/
 │   │   └── routes.py               # API 엔드포인트 (/diagnose)
+│   ├── agents/                     # 다중 에이전트 시스템
+│   │   ├── base_agent.py
+│   │   ├── law_agent.py            # 법령 해석 에이전트
+│   │   ├── resolution_agent.py     # 의결서 해석 에이전트
+│   │   ├── precedent_agent.py      # 판례·결정문 해석 에이전트
+│   │   ├── case_agent.py           # 사례 기반 해석 에이전트
+│   │   └── synthesis_agent.py      # 종합 분석 에이전트
 │   ├── rag/
-│   │   ├── pipeline.py             # 전체 RAG 파이프라인 (여기만 호출하면 됨)
+│   │   ├── pipeline.py             # 전체 RAG 파이프라인
 │   │   ├── query/
-│   │   │   └── query_processor.py  # 사용자 쿼리 재작성 + 의도 분류 (gpt-4o-mini)
+│   │   │   └── query_processor.py  # 쿼리 재작성 + 의도 분류 (gpt-4o-mini)
 │   │   ├── db/
 │   │   │   ├── resolution_db.py    # 의결서 Chroma DB 구축 및 조회
 │   │   │   └── scenario_db.py      # 엑셀 QA 로드 및 BM25 검색
@@ -28,10 +43,9 @@ hearim/
 │   │       ├── hybrid_search.py    # Dense + BM25 하이브리드 검색 및 RRF 결합
 │   │       ├── reranker.py         # Cross-Encoder 리랭킹 (CUDA, fp16, async)
 │   │       └── filter.py           # GPT-4o-mini 기반 LLM 시맨틱 필터링
-│   ├── schemas/
-│   │   ├── rag_output.py           # RAG 파이프라인 출력 스키마
-│   │   └── report_output.py        # 에이전트 출력 스키마
-│   └── agents/                     # 멀티에이전트 시스템 (이승건 담당)
+│   └── schemas/
+│       ├── rag_output.py           # RAG 파이프라인 출력 스키마
+│       └── report_output.py        # 에이전트 출력 스키마
 │
 ├── data/
 │   ├── raw/
@@ -57,117 +71,93 @@ hearim/
 
 ---
 
-## 사용 모델
-
-| 역할 | 모델 |
-|---|---|
-| 임베딩 | `dragonkue/BGE-m3-ko` (CUDA, fp16) |
-| 쿼리 재작성 + 의도 분류 | `gpt-4o-mini` |
-| 리랭킹 | `Dongjin-kr/ko-reranker` (Cross-Encoder, CUDA) |
-| LLM 필터링 | `gpt-4o-mini` |
-
----
-
-## RAG 파이프라인 흐름
-
-```
-사용자 입력: user_query + situation_type
-        ↓
-1. Query Processor (gpt-4o-mini)
-   - 쿼리 재작성 (법률 용어 포함)
-   - 의도 분류 (제재중심 / 법령중심 / 유사사례 / 시장영향)
-        ↓
-2. Hybrid Search (의결서 31,877개 청크)
-   - Dense Search: BGE-m3-ko 임베딩 → Chroma DB
-   - BM25 Search: 키워드 매칭
-   - RRF(Reciprocal Rank Fusion)로 결합 → Top 20
-        ↓
-3. Reranker (Dongjin-kr/ko-reranker)
-   - Cross-Encoder로 관련도 재계산 → Top 10
-        ↓
-4. LLM Filter (gpt-4o-mini)
-   - 의미적으로 관련 없는 문서 제거 → Top 5
-        ↓
-5. Scenario Search (엑셀 QA 500개)
-   - situation_type 필터링
-   - BM25 검색 → Top 3
-        ↓
-RAGOutput (JSON) → 에이전트로 전달
-```
-
----
-
-## 최초 실행 설정 (최초 1회만 실행)
-
-**1. 모델 다운로드**
-```cmd
-conda activate hearim
-python scripts/download_models.py
-```
-
-**2. DB 구축**
-```cmd
-python scripts/build_db.py
-```
-
----
-
-## 파이프라인 호출 방법
-
-```python
-from rag.pipeline import RAGPipeline
-import asyncio
-
-pipeline = RAGPipeline(
-    db_path="data/processed/chroma_db",
-    excel_path="data/raw/scenarios.xlsx"
-)
-
-result = asyncio.get_event_loop().run_until_complete(
-    pipeline.run(
-        user_query="자사상품 검색 상단에 올리면 문제되나요?",
-        situation_type="suspected"
-    )
-)
-
-# JSON 직렬화
-result_json = result.model_dump_json()
-```
-
-## 전체 서비스 흐름
+## 동작 흐름
 
 ```
 웹 (질문화면.html)
         ↓ POST /diagnose { user_query, situation_type }
 FastAPI (routes.py)
         ↓
-pipeline.run()
+┌──────────────────────────────────────┐
+│  1단계: RAG 파이프라인               │
+│  ① 쿼리 재작성 (GPT-4o-mini)        │
+│  ② Hybrid Search → Top 10           │
+│     Dense(BGE-m3-ko) + BM25 + RRF   │
+│  ③ Reranking (ko-reranker) → Top 10 │
+│  ④ LLM Filter (GPT-4o-mini) → Top 5 │
+│  ⑤ 시나리오 BM25 검색 → Top 3       │
+└──────────────────────────────────────┘
+        ↓ 의결서 청크 5건 + 시나리오 3건
+┌──────────────────────────────────────┐
+│  2단계: MCP 검색 (국가법령정보 API)  │
+│  법령 / 판례 / 공정위 결정문         │
+└──────────────────────────────────────┘
         ↓
-RAGOutput (의결서 5개 + QA 3개)
+┌──────────────────────────────────────┐
+│  3단계: 4개 에이전트 병렬 분석       │
+│  법령 해석 / 의결서 해석             │
+│  판례 해석 / 사례 기반 해석          │
+└──────────────────────────────────────┘
         ↓
-에이전트 (이승건 담당)
+┌──────────────────────────────────────┐
+│  4단계: 종합 에이전트                │
+│  위험도 판정 + 권고사항 생성         │
+└──────────────────────────────────────┘
         ↓
-Final Report
-        ↓
-웹 (결과화면.html)
+웹 (결과화면.html) ← FinalReport (JSON)
+```
+
+---
+
+## 사용 모델
+
+| 역할 | 모델 |
+|---|---|
+| 임베딩 | `dragonkue/BGE-m3-ko` (CUDA, fp16) |
+| 쿼리 재작성 + LLM 필터 + 에이전트 | `gpt-4o-mini` |
+| 리랭킹 | `Dongjin-kr/ko-reranker` (Cross-Encoder, CUDA, fp16) |
+
+---
+
+## 최초 실행 설정 (최초 1회만 실행)
+
+**1. 패키지 설치**
+```cmd
+pip install -r requirements.txt
+pip install mcp
+```
+
+**2. 환경 변수 설정**
+
+`.env` 파일에 아래 값 입력
+
+```
+OPENAI_API_KEY=sk-...
+LAW_API_OC=your_id
+```
+
+**3. 모델 다운로드**
+```cmd
+python scripts/download_models.py
+```
+
+**4. DB 구축**
+```cmd
+python scripts/build_db.py
 ```
 
 ---
 
 ## 서버 실행
 
-**1. 백엔드 서버 실행**
-
-`backend/` 폴더에서 실행
+**백엔드 서버 실행** (`backend/` 폴더에서)
 
 ```cmd
 cd backend
 uvicorn main:app --reload
 ```
 
-**2. 프론트엔드 접속**
-
-브라우저에서
+**프론트엔드 접속**
 
 ```
 http://localhost:8000/질문화면.html
@@ -175,36 +165,61 @@ http://localhost:8000/질문화면.html
 
 ---
 
-## 진행 상황
+## 출력 구조 (FinalReport)
 
+```json
+{
+  "original_query": "자사상품을 검색 결과 상단에 노출시키면 문제가 되나요?",
+  "rewritten_query": "자사상품 검색 결과 상단 노출의 법적 문제",
+  "situation_type": "위반 의심 사항",
+  "agent_reports": [
+    {
+      "agent_type": "law",
+      "agent_name": "법령 해석 에이전트",
+      "analysis": "...",
+      "confidence_score": 85,
+      "key_findings": ["...", "..."],
+      "limitations": "..."
+    }
+  ],
+  "synthesis": "종합 분석 내용",
+  "overall_confidence": 75,
+  "risk_level": "높음",
+  "recommendations": ["...", "..."],
+  "caveats": "..."
+}
 ```
-✅ RAG 파이프라인 구현 완료
-   - Query Processor, Hybrid Search, Reranker, LLM Filter, Scenario DB
 
-✅ FastAPI 서버 연결 완료
-   - POST /diagnose 엔드포인트
-   - 질문화면.html → API 호출 → RAGOutput 반환
-
-✅ 프론트엔드 연결 완료
-   - 질문 입력 + 상황유형 선택 → 진단 시작 → 결과화면 이동
-
-⏳ 에이전트 연결 대기 (이승건 담당)
-   - routes.py에서 run_agents(rag_result) 호출 예정
-   - RAGOutput → 에이전트 → ReportOutput → 웹 반환
-```
-
-### situation_type 종류
-
-| 한글 | 영어 |
-|---|---|
-| 위반 의심 사항 | `suspected` |
-| 거래 진행 중 | `in_progress` |
-| 계약 체결 전 | `contract_before` |
-| 정기 점검 | `regular_check` |
+**risk_level 기준:** `낮음` / `보통` / `높음` / `매우 높음`
 
 ---
 
-## RAGOutput JSON (실제 출력)
+## situation_type 종류
+
+| 영어 (HTML) | 한글 (에이전트) |
+|---|---|
+| `suspected` | `위반 의심 사항` |
+| `in_progress` | `거래 진행 중` |
+| `contract_before` | `계약 체결 전` |
+| `regular_check` | `정기 점검` |
+
+---
+
+## 프롬프트 수정 방법
+
+| 에이전트 | 파일 |
+|---|---|
+| 법령 해석 | `backend/agents/law_agent.py` |
+| 의결서 해석 | `backend/agents/resolution_agent.py` |
+| 판례 해석 | `backend/agents/precedent_agent.py` |
+| 사례 기반 해석 | `backend/agents/case_agent.py` |
+| 종합 분석 | `backend/agents/synthesis_agent.py` |
+
+---
+
+## RAGOutput JSON (서준원 파트 출력 예시)
+
+`pipeline.run()` 실행 시 에이전트로 전달되는 데이터 구조예요.
 
 ```json
 {
@@ -213,145 +228,29 @@ http://localhost:8000/질문화면.html
   "rewritten_query": "자사상품 검색 상단 노출의 법적 문제 여부",
   "resolution_docs": [
     {
-      "doc_id": "DOC-6b3d6aa0-571d-462a-bb47-70b1e8d3bc27-CH-242",
-      "content": "(2) PB상품 등의 검색순위 상위 노출은 온·오프라인의 일반 상거래 관행에 부합하\n- 139 -\n므로 공정거래저해성이 인정되지 않는다는 주장\n- 259 피심인들은 위 2. 마. 1) 가) (1)에서 검토한 바와 같이 주요 온·오프라인 유 통업체도 자체 기준에 따라 직매입 상품을 우선 추천하고 있다는 점, 세계적으로 PB·직매입상품 우선 노출에 대한 제재가 없었다는 점에서 일반 상관행에 부합하는 정상적인 행위라고 주장한다. 특히 유통업체의 PB·직매입 제품 우선 노출에 대한 제재가 이루어진 사례가 없고, 자사우대는 압도적 시장점유율을 가지는 플랫폼이 해 당 시장의 지배력을 전이함으로써 소비자의 매장 선택을 왜곡하기 때문에 문제되나 쿠팡은 지배력 전이가 문제되는 사안이 아니라는 점을 근거로 들고 있다.\n- 260 그러나 위에서 검토한 바와 같이 주요 온·오프라인 유통업체가 직매입 상품 을 우선 추천하고 있는지 확인된 바 없으며, PB상품 등을 재고 처리, 홍보, 리베이 트 수취, 물량 확보 등 사업상 필요에 따라 인위적으로 검색순위 상위에 노출시킨 행위는 소비자를 오인시키는 행위로 신의칙이나 바람직한 경쟁 질서에 부합하는 행 위로 보기 어렵다는 점에서 정상적인 거래관행으로 보기 어렵다.",
-      "score": 0.6640463471412659,
+      "doc_id": "DOC-6b3d...-CH-242",
+      "content": "PB상품 등의 검색순위 상위 노출은...",
+      "score": 0.664,
       "metadata": {
-        "조치유형": "과징금",
         "의결서제목": "쿠팡(주) 등의 불공정거래행위에 대한 건",
-        "피심인기업명": "쿠팡(주)",
-        "chunk_type": "text",
-        "section": "이유",
         "위반유형": "부당한 고객유인",
         "세부위반유형": "위계에 의한 고객유인",
-        "공개일자": "20241023",
-        "chunk_index": 240,
-        "의결서관리번호": "024862"
-      }
-    },
-    {
-      "doc_id": "DOC-6b3d6aa0-571d-462a-bb47-70b1e8d3bc27-CH-232",
-      "content": "2017. 2. 15. 선고 2015누44280판결(대법원 심리불속행 기각))하였다.\n한편, 피심인들은 한국갤럽 소비자 인식 보고서(소을 제45호증)의 설문 내용도 근거로 제시한다. 해당 설문은 \"온라인 쇼핑몰에서 PB상품의 검색 결과 상단에 제시하는 것과 오프라인 마트에서 PB상품의 출입구 등 목좋은 자리에 배치하는 것이 유사하다\"는데 얼마나 동의하십니까? 라고 질의 하였으며 84.6%가 동의한다고 답변하였다.",
-      "score": 0.518157958984375,
-      "metadata": {
-        "피심인기업명": "쿠팡(주)",
-        "chunk_type": "text",
-        "공개일자": "20241023",
-        "의결서관리번호": "024862",
         "조치유형": "과징금",
-        "위반유형": "부당한 고객유인",
-        "chunk_index": 230,
-        "section": "이유",
-        "세부위반유형": "위계에 의한 고객유인",
-        "의결서제목": "쿠팡(주) 등의 불공정거래행위에 대한 건"
-      }
-    },
-    {
-      "doc_id": "DOC-6b3d6aa0-571d-462a-bb47-70b1e8d3bc27-CH-124",
-      "content": "- 112) \"원고가 이 사건 위반행위로 스마트스토어 입점상품을 상대적으로 검색결과 상위에 노출시키고 이 사건 경쟁 오픈마켓 입점상품은 상대적으로 검색결과 하위에 노출시킨 행위는, 자신의 오픈마켓 서 비스를 통해 판매되는 상품이 이 사건 경쟁 오픈마켓 서비스를 통해 판매되는 상품에 비해 소비자 에게 보다 적합한 상품이라고 알린 행위로서 '자기가 공급하는 상품 또는 용역의 내용이나 거래조 건 기타 거래에 관한 사항에 관하여 실제보다 또는 경쟁사업자의 것보다 우량 또는 유리한 것으로 고 객을 오인시키거나 경쟁사업자의 것이 실제보다 또는 자기의 것보다 불량 또는 불리한 것으로 고객을 오인시킨' 행위에 해당한다\"",
-      "score": 0.18467415869235992,
-      "metadata": {
-        "위반유형": "부당한 고객유인",
-        "공개일자": "20241023",
-        "의결서제목": "쿠팡(주) 등의 불공정거래행위에 대한 건",
         "피심인기업명": "쿠팡(주)",
-        "chunk_type": "text",
-        "의결서관리번호": "024862",
-        "chunk_index": 122,
-        "세부위반유형": "위계에 의한 고객유인",
-        "section": "이유",
-        "조치유형": "과징금"
-      }
-    },
-    {
-      "doc_id": "DOC-6b3d6aa0-571d-462a-bb47-70b1e8d3bc27-CH-187",
-      "content": "- * 소갑 제3호증 (2023. 9. 25.자 쿠팡 제출자료)\n1 다섯째, 피심인들이 검색순위를 인위적으로 조정하는 행위가 위법할 수 있음 을 인식하였음에도 불구하고 행위를 지속하였다는 점에서도 공정거래저해성이 인정 된다.",
-      "score": 0.14117497205734253,
-      "metadata": {
-        "공개일자": "20241023",
-        "chunk_type": "text",
-        "조치유형": "과징금",
-        "chunk_index": 185,
-        "피심인기업명": "쿠팡(주)",
-        "의결서관리번호": "024862",
-        "세부위반유형": "위계에 의한 고객유인",
-        "의결서제목": "쿠팡(주) 등의 불공정거래행위에 대한 건",
-        "section": "이유",
-        "위반유형": "부당한 고객유인"
-      }
-    },
-    {
-      "doc_id": "DOC-6b3d6aa0-571d-462a-bb47-70b1e8d3bc27-CH-230",
-      "content": "* 소갑 제121호증(2023. 10. 17.자 쿠팡의 제출자료), 전원회의 2차심의 심사관 추가 PT 21p\n(나) 검색순위 조정은 온·오프라인의 정상적 상거래 관행에 부합한다는 주장\n- 241 피심인들은 국내 주요 온·오프라인 유통업체도 자체 기준에 따라 직매입 상 품을 우선 추천하고 있으므로, 검색순위 조정 행위는 유통업체의 일반적 상거래 관 행에 부합하는 정상적인 사업 활동으로 위계가 아니라고 주장한다.",
-      "score": 0.06620736420154572,
-      "metadata": {
-        "의결서관리번호": "024862",
-        "세부위반유형": "위계에 의한 고객유인",
         "공개일자": "20241023",
         "section": "이유",
-        "조치유형": "과징금",
-        "위반유형": "부당한 고객유인",
-        "의결서제목": "쿠팡(주) 등의 불공정거래행위에 대한 건",
-        "피심인기업명": "쿠팡(주)",
-        "chunk_index": 228,
         "chunk_type": "text"
       }
     }
   ],
   "scenario_docs": [
     {
-      "question": "플랫폼이 외부 동영상 제휴사업자에게 중요한 속성정보 변경사항을 제대로 알리지 않으면 왜 문제가 되나요?",
-      "answer": "핵심은 검색 노출에 중요한 입력항목을 자사만 활용하고 외부 사업자는 활용하지 못하게 되는 정보 비대칭이 생긴다는 점입니다. 해당 기업 사건에서는 키워드가 검색 노출의 관련도 계산에서 큰 비중을 차지했는데도, 외부 동영상 제휴사업자에게는 해당 입력항목이 자사 전용인 것처럼 오인하게 하여 충분히 입력하지 못하도록 방해한 것으로 판단되었습니다.",
-      "legal_interpretation": "부당한 고객유인 또는 자사우대 문제는 단순히 알고리즘 결과만이 아니라, 검색결과에 필요한 정보 입력기회를 누구에게 어떻게 부여했는지도 함께 본다. 중요 속성정보 접근이 비대칭이면 경쟁사업자의 고객 유인 능력이 저하될 수 있다.",
-      "evidence": "의결서는 피심인이 2012년부터 배포한 메타데이터 가이드에 키워드를 자사 전용처럼 표시해 왔고, 2019. 8. 8. 외부 사업자의 질의에 대해서도 '전달주셔도 된다'는 수준으로만 답변하여 변경사항을 명확히 고지하지 않았다고 보았다.",
-      "situation_type": "suspected"
-    },
-    {
-      "question": "관련 출판사업자가 본문이 바뀌지 않은 관련 학습참고서를 새 학년도용처럼 보이게 하면서 실제 발행일을 숨기거나 오인시키면 왜 문제가 되나요?",
-      "answer": "학습참고서를 구매하는 관련 소비자는 새 학년도용 도서라면 최신 교육과정, 수험경향, 오탈자 수정 등이 반영되었을 것으로 기대합니다. 그런데 관련 출판사업자가 본문이 바뀌지 않은 책의 표지만 바꾸고 실제 발행일을 숨긴 채 최근 날짜를 표시하면, 관련 소비자는 새롭게 개정된 도서라고 오인할 수 있습니다.",
-      "legal_interpretation": "표시광고법상 사실을 은폐하거나 축소해 관련 소비자를 오인시키는 표시는 기만적 표시행위에 해당합니다. 특히 학습참고서처럼 발행일로 도서정가제 적용 여부와 할인 가능 범위가 달라지는 시장에서는, 실제 발행일을 숨기고 최근 날짜만 강조하는 방식이 더욱 문제될 수 있습니다.",
-      "evidence": "의결서에 따르면 관련 출판사업자는 본문내용이 변경되지 않은 10종의 2009학년도용 관련 학습참고서를 출판하면서 발행일은 표시하지 않고 표지 등에 '펴낸날 2009. 2. 1.' 등으로 표시하였으나, 실제 발행일은 2007. 2. 1.이었습니다.",
-      "situation_type": "suspected"
-    },
-    {
-      "question": "관련 피자 프랜차이즈 본사가 경쟁 브랜드 설립자나 이탈 가맹점주를 압박할 목적으로 사실과 다른 내용으로 형사고소하면 왜 문제가 되나요?",
-      "answer": "분쟁 대응을 위한 법적 조치 자체가 금지되는 것은 아니지만, 관련 피자 프랜차이즈 본사가 상대방 주장이 사실에 기초한 것임을 알면서도 허위 사실 적시를 이유로 형사고소를 제기하면 이는 권리구제를 넘어 경쟁 브랜드의 개점과 영업을 위축시키는 수단으로 기능할 수 있습니다.",
-      "legal_interpretation": "정당한 권리행사로 보기 위해서는 고소 내용의 사실적 근거와 목적의 상당성이 필요합니다. 허위성을 인식한 채 반복적 고소·항고로 압박하였다면 위법성이 커집니다.",
-      "evidence": "의결서에는 관련 피자 프랜차이즈 본사가 이른바 통행세 문제 제기 내용이 허위가 아님을 인지하고도 경쟁 브랜드 설립자를 명예훼손 등으로 고소하였고, 당사자는 경찰 조사를 받았으나 결국 혐의없음 처분을 받은 사실이 적시되어 있습니다.",
+      "question": "...",
+      "answer": "...",
+      "legal_interpretation": "...",
+      "evidence": "...",
       "situation_type": "suspected"
     }
   ]
 }
 ```
-
----
-
-## 필드 설명
-
-### resolution_docs
-
-| 필드 | 설명 |
-|---|---|
-| `doc_id` | 청크 고유 ID |
-| `content` | 의결서 청크 텍스트 |
-| `score` | Reranker 관련도 스코어 (0~1, 높을수록 관련도 높음) |
-| `metadata.의결서제목` | 의결서 이름 |
-| `metadata.의결서관리번호` | 의결서 관리 번호 |
-| `metadata.위반유형` | 위반 유형 |
-| `metadata.세부위반유형` | 세부 위반 유형 |
-| `metadata.조치유형` | 시정명령 / 과징금 등 |
-| `metadata.피심인기업명` | 피심인 기업명 |
-| `metadata.공개일자` | 의결서 공개일 |
-| `metadata.section` | 주문 / 이유 |
-| `metadata.chunk_type` | text / table |
-| `metadata.chunk_index` | 청크 순서 |
-
-### scenario_docs
-
-| 필드 | 설명 |
-|---|---|
-| `question` | 유사 상황 질문 |
-| `answer` | 답변 |
-| `legal_interpretation` | 법리 해석 |
-| `evidence` | 의결서 근거 |
-| `situation_type` | 상황 유형 |

@@ -11,7 +11,10 @@ class HybridSearch:
         # Chroma DB 연결
         self.client = chromadb.PersistentClient(
             path=db_path,
-            settings=Settings(anonymized_telemetry=False)
+            settings=Settings(
+                anonymized_telemetry=False,
+                chroma_api_impl="chromadb.api.segment.SegmentAPI",
+            ),
         )
         self.collection = self.client.get_collection("resolutions")
         self.embedder = Embedder()
