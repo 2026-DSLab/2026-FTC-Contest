@@ -22,3 +22,6 @@ __pycache__/
 .cache/
 huggingface/
 
+# 분석 결과
+results/*.json
+!results/.gitkeep

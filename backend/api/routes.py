@@ -1,32 +1,34 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-import sys
-import os
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(os.path.join(BASE_DIR, "backend"))
-
-from rag.pipeline import RAGPipeline
-from schemas.rag_output import RAGOutput
+from agent_pipeline import LegalAnalysisPipeline
+from models import SituationType
 
 router = APIRouter()
+pipeline = LegalAnalysisPipeline()
 
-pipeline = RAGPipeline(
-    db_path=os.path.join(BASE_DIR, "data/processed/chroma_db"),
-    excel_path=os.path.join(BASE_DIR, "data/raw/scenarios.xlsx")
-)
-
+# 영어 → 한글 매핑
+SITUATION_MAP = {
+    "suspected": "위반 의심 사항",
+    "in_progress": "거래 진행 중",
+    "contract_before": "계약 체결 전",
+    "regular_check": "정기 점검"
+}
 
 class DiagnoseRequest(BaseModel):
     user_query: str
     situation_type: str
 
-
 @router.post("/diagnose")
-async def diagnose(req: DiagnoseRequest):
-    result: RAGOutput = await pipeline.run(
-        user_query=req.user_query,
-        situation_type=req.situation_type
-    )
+def diagnose(req: DiagnoseRequest):
+    # 영어로 오면 한글로 변환
+    situation_str = SITUATION_MAP.get(req.situation_type, req.situation_type)
+    
+    try:
+        situation = SituationType(situation_str)
+    except ValueError:
+        valid = list(SITUATION_MAP.keys())
+        raise HTTPException(status_code=422, detail=f"situation_type은 다음 중 하나: {valid}")
+    
+    result = pipeline.run(req.user_query, situation_type=situation)
     return JSONResponse(content=result.model_dump())
