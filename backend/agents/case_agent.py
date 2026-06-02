@@ -29,7 +29,7 @@ _SYSTEM_PROMPT = """당신은 공정거래 관련 사례 비교 분석 전문가
 
 class CaseAgent(BaseAgent):
     agent_type = "case"
-    agent_name = "사례 기반 해석 에이전트"
+    agent_name = "📁 사례 해석"
 
     @property
     def system_prompt(self) -> str:

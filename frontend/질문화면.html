@@ -696,13 +696,17 @@
           })
         });
 
+        if (response.status === 400) {
+          const err = await response.json();
+          throw new Error(err.detail || '관련 없는 질문입니다.');
+        }
         if (!response.ok) throw new Error('서버 오류: ' + response.status);
 
         const result = await response.json();
 
         // 결과를 sessionStorage에 저장 후 결과 화면으로 이동
         sessionStorage.setItem('diagnoseResult', JSON.stringify(result));
-        window.location.href = '결과화면_더미.html';
+        window.location.href = '결과화면(예시).html';
 
       } catch (err) {
         errorMsg.textContent = '오류가 발생했습니다: ' + err.message;

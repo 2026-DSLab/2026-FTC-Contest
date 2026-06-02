@@ -29,7 +29,7 @@ _SYSTEM_PROMPT = """당신은 공정거래 관련 판례 및 결정문 분석 �
 
 class PrecedentAgent(BaseAgent):
     agent_type = "precedent"
-    agent_name = "판례·결정문 해석 에이전트"
+    agent_name = "🔍 판례 해석"
 
     @property
     def system_prompt(self) -> str:

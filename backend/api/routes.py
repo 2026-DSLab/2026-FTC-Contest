@@ -1,11 +1,19 @@
+import json
+from datetime import datetime
+from pathlib import Path
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from agent_pipeline import LegalAnalysisPipeline
 from models import SituationType
+from rag.query.query_processor import IrrelevantQueryError
 
 router = APIRouter()
 pipeline = LegalAnalysisPipeline()
+
+_RESULTS_DIR = Path(__file__).parent.parent.parent / "results"
+_RESULTS_DIR.mkdir(exist_ok=True)
 
 # 영어 → 한글 매핑
 SITUATION_MAP = {
@@ -30,5 +38,17 @@ def diagnose(req: DiagnoseRequest):
         valid = list(SITUATION_MAP.keys())
         raise HTTPException(status_code=422, detail=f"situation_type은 다음 중 하나: {valid}")
     
-    result = pipeline.run(req.user_query, situation_type=situation)
-    return JSONResponse(content=result.model_dump())
+    try:
+        result = pipeline.run(req.user_query, situation_type=situation)
+    except IrrelevantQueryError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    data = result.model_dump()
+
+    # results/ 에 저장
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    slug = req.user_query[:20].replace(" ", "_").replace("/", "-")
+    save_path = _RESULTS_DIR / f"{ts}_{slug}.json"
+    save_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    return JSONResponse(content=data)

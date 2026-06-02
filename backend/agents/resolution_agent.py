@@ -29,7 +29,7 @@ _SYSTEM_PROMPT = """당신은 공정거래위원회 의결서 및 결정문 분�
 
 class ResolutionAgent(BaseAgent):
     agent_type = "resolution"
-    agent_name = "의결서 해석 에이전트"
+    agent_name = "📋 의결서 해석"
 
     @property
     def system_prompt(self) -> str:
