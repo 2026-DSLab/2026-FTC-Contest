@@ -29,7 +29,7 @@ _SYSTEM_PROMPT = """당신은 공정거래법 및 관련 법령 조문 해석 �
 
 class LawAgent(BaseAgent):
     agent_type = "law"
-    agent_name = "법령 해석 에이전트"
+    agent_name = "⚖️ 법령 해석"
 
     @property
     def system_prompt(self) -> str:

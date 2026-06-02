@@ -31,12 +31,16 @@ REPORT_TOOL = {
                     "items": {"type": "string"},
                     "description": "핵심 발견 사항 목록 (3~5개)",
                 },
+                "source_description": {
+                    "type": "string",
+                    "description": "분석에 활용한 주요 법령·의결서·판례명 (최대 2줄, 줄바꿈은 \\n 사용. 예: '공정거래법 제45조\\n시행령 별표2')",
+                },
                 "limitations": {
                     "type": "string",
                     "description": "분석의 한계점 또는 불확실한 부분 (없으면 빈 문자열)",
                 },
             },
-            "required": ["analysis", "confidence_score", "key_findings", "limitations"],
+            "required": ["analysis", "confidence_score", "key_findings", "source_description", "limitations"],
         },
     },
 }
@@ -131,5 +135,6 @@ class BaseAgent(ABC):
             analysis=data["analysis"],
             confidence_score=data["confidence_score"],
             key_findings=data["key_findings"],
+            source_description=data.get("source_description") or None,
             limitations=data.get("limitations") or None,
         )
