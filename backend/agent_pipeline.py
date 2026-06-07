@@ -113,10 +113,9 @@ class LegalAnalysisPipeline:
         """Step 1: RAGPipeline 실행 (쿼리 재작성 + 의결서/시나리오 검색)"""
         return asyncio.run(self.rag_pipeline.run(user_query, situation_type))
 
-    def step2_mcp(self, rewritten_query: str) -> ExternalEvidence:
-        """Step 2: MCP로 법령·판례·결정문 검색 (재작성 쿼리를 키워드로 활용)"""
-        keywords = rewritten_query.split()[:7]
-        return self.mcp_retriever.retrieve_sync(keywords)
+    def step2_mcp(self, mcp_law_query: str, mcp_prec_query: str) -> ExternalEvidence:
+        """Step 2: MCP로 법령·판례 검색 (law/prec 각각 최적화된 쿼리 사용)"""
+        return self.mcp_retriever.retrieve_sync(mcp_law_query, mcp_prec_query)
 
     def step3_analyze(
         self,
@@ -150,6 +149,18 @@ class LegalAnalysisPipeline:
         verbose: bool = False,
     ) -> FinalReport:
         """전체 파이프라인을 순서대로 실행합니다."""
+        final, _ = self.run_traced(user_query, situation_type, verbose)
+        return final
+
+    def run_traced(
+        self,
+        user_query: str,
+        situation_type: str | SituationType = SituationType.SUSPECTED,
+        verbose: bool = False,
+    ) -> tuple[FinalReport, dict]:
+        """전체 파이프라인을 실행하고 (FinalReport, pipeline_trace) 튜플을 반환합니다.
+        pipeline_trace에는 각 단계의 중간 결과가 담겨 있습니다 (4.3절 데이터 활용결과용).
+        """
         if isinstance(situation_type, SituationType):
             situation_type_key = situation_type.to_rag_key()
             situation_type_label = situation_type.value
@@ -163,13 +174,18 @@ class LegalAnalysisPipeline:
         if verbose:
             print(f"  → 재작성: {rag_output.rewritten_query}")
             print(
-                f"  → 의결서 청크 {len(rag_output.resolution_docs)}건 / "
+                f"  → 하이브리드 검색 {len(rag_output.hybrid_search_raw)}건 → "
+                f"리랭킹 후 {len(rag_output.reranked_raw)}건 → "
+                f"LLM 필터 후 {len(rag_output.filtered_raw)}건 / "
                 f"시나리오 {len(rag_output.scenario_docs)}건 수집"
             )
 
         if verbose:
             print(f"[2/4] MCP 법령·판례 검색 중...")
-        mcp_evidence = self.step2_mcp(rag_output.rewritten_query)
+        mcp_evidence = self.step2_mcp(
+            rag_output.mcp_law_query or "독점규제 공정거래",
+            rag_output.mcp_prec_query or rag_output.rewritten_query,
+        )
         if verbose:
             print(
                 f"  → 법령 {len(mcp_evidence.laws)}건 / 판례 {len(mcp_evidence.precedents)}건 / "
@@ -194,7 +210,24 @@ class LegalAnalysisPipeline:
         if verbose:
             print(f"  → 종합 신뢰도: {final.overall_confidence}/100 | 리스크: {final.risk_level}")
 
-        return final
+        pipeline_trace = {
+            "rag": {
+                "query_intent": rag_output.query_intent,
+                "mcp_law_query": rag_output.mcp_law_query,
+                "mcp_prec_query": rag_output.mcp_prec_query,
+                "hybrid_search_results": [doc.model_dump() for doc in rag_output.hybrid_search_raw],
+                "reranked_results": [doc.model_dump() for doc in rag_output.reranked_raw],
+                "filtered_results": [doc.model_dump() for doc in rag_output.filtered_raw],
+                "scenario_results": [doc.model_dump() for doc in rag_output.scenario_docs],
+            },
+            "mcp": {
+                "laws": [doc.model_dump() for doc in mcp_evidence.laws],
+                "precedents": [doc.model_dump() for doc in mcp_evidence.precedents],
+                "ftc_decisions": [doc.model_dump() for doc in mcp_evidence.ftc_decisions],
+            },
+        }
+
+        return final, pipeline_trace
 
     # ── 내부 헬퍼 ─────────────────────────────────────────
 

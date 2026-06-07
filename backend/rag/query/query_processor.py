@@ -43,14 +43,14 @@ class IrrelevantQueryError(Exception):
 
 
 SYSTEM_PROMPT = """당신은 공정거래 법률 전문가입니다.
-사용자의 질문을 분석하여 다음 세 가지를 JSON으로 반환하세요.
+사용자의 질문을 분석하여 다음 다섯 가지를 JSON으로 반환하세요.
 
 1. is_relevant: 질문이 공정거래·경쟁법·기업 컴플라이언스 관련인지 여부 (true/false)
    - true: 불공정거래, 과징금, 하도급, 가맹사업, 표시광고, 공동행위, 거래상 지위남용,
            계약 법적 리스크, 기업 간 거래 분쟁 등 공정거래 관련 주제
    - false: 요리, 날씨, 스포츠, 코딩, 일반 상식 등 공정거래와 전혀 무관한 주제
 
-2. rewritten_query: 법률 검색에 최적화된 형태로 재작성한 쿼리 (is_relevant=true일 때만 의미 있음)
+2. rewritten_query: RAG 의결서 검색에 최적화된 형태로 재작성한 쿼리 (is_relevant=true일 때만 의미 있음)
    - 법률 용어를 포함
    - 핵심 쟁점이 드러나도록 구체화
    - 50자 이내
@@ -61,8 +61,20 @@ SYSTEM_PROMPT = """당신은 공정거래 법률 전문가입니다.
    - "유사사례": 유사한 사례, 판례 관련
    - "시장영향": 시장, 경쟁, 소비자 영향 관련
 
+4. mcp_law_query: 법령 이름 검색에 최적화된 키워드 (is_relevant=true일 때만 의미 있음)
+   - law.go.kr 법령명(lawNm) 검색이므로 반드시 실제 법령 공식 명칭이나 약칭을 사용해야 함
+   - 공정거래·플랫폼·자사우대·검색순위·불공정거래·시장지배적지위 관련 → "독점규제 공정거래"
+   - 하도급 관련 → "하도급거래", 가맹 관련 → "가맹사업", 대규모유통 관련 → "대규모유통업"
+   - "표시광고"는 표시광고법 직접 위반 사안에만 사용 (검색노출·자사우대는 공정거래법 사안)
+   - 15자 이내 핵심 법령명
+
+5. mcp_prec_query: 판례 본문 검색에 최적화된 키워드 (is_relevant=true일 때만 의미 있음)
+   - 판례 본문(bdyText)에서 검색되므로 핵심 법리·행위 유형을 포함
+   - 예: "자사우대 불공정거래 부당한 고객유인", "하도급 기술자료 유용", "가맹본부 부당한 거래거절"
+   - 20자 이내 핵심 법리 표현
+
 반드시 아래 JSON 형식으로만 답하세요:
-{"is_relevant": true, "rewritten_query": "...", "intent": "..."}"""
+{"is_relevant": true, "rewritten_query": "...", "intent": "...", "mcp_law_query": "...", "mcp_prec_query": "..."}"""
 
 
 async def process_query(user_query: str) -> dict:
@@ -86,5 +98,7 @@ async def process_query(user_query: str) -> dict:
 
     return {
         "rewritten_query": result.get("rewritten_query", user_query),
-        "intent": result.get("intent", "법령중심")
+        "intent": result.get("intent", "법령중심"),
+        "mcp_law_query": result.get("mcp_law_query", "독점규제 공정거래"),
+        "mcp_prec_query": result.get("mcp_prec_query", result.get("rewritten_query", user_query)),
     }

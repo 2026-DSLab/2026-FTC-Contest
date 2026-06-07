@@ -60,10 +60,12 @@ class MCPRetriever:
         texts = [c.text for c in result.content if hasattr(c, "text")]
         return "\n".join(texts)
 
-    async def retrieve(self, keywords: list[str]) -> ExternalEvidence:
-        """키워드 목록으로 법령·판례·공정위 결정문을 검색하고 본문을 수집합니다."""
+    async def retrieve(self, law_query: str, prec_query: str) -> ExternalEvidence:
+        """법령·판례를 각각 최적화된 쿼리로 검색합니다.
+        - law_query: 법령명 검색용 (예: "독점규제 공정거래")
+        - prec_query: 판례 본문 검색용 (예: "자사우대 불공정거래 부당한 고객유인")
+        """
         evidence = ExternalEvidence()
-        query = " ".join(keywords[:3])
 
         async with stdio_client(self._server_params) as (read, write):
             async with ClientSession(read, write) as session:
@@ -71,12 +73,13 @@ class MCPRetriever:
 
                 # ── 법령 검색 ──────────────────────────────────
                 law_xml = await self._call_tool(
-                    session, "search_law", {"query": query, "display": self.display}
+                    session, "search_law", {"query": law_query, "display": self.display}
                 )
                 laws = _parse_search_results(law_xml)
                 for item in laws[: self.max_detail]:
                     mst = item.get("법령일련번호") or item.get("MST") or item.get("mst")
-                    title = item.get("법령명_한글") or item.get("법령명") or item.get("title", "")
+                    # XML 태그: 법령명한글 (언더스코어 없음)
+                    title = item.get("법령명한글") or item.get("법령명") or item.get("title", "")
                     if mst:
                         content_xml = await self._call_tool(
                             session, "get_law_content", {"mst": mst}
@@ -91,7 +94,7 @@ class MCPRetriever:
 
                 # ── 판례 검색 ──────────────────────────────────
                 prec_xml = await self._call_tool(
-                    session, "search_precedent", {"query": query, "display": self.display}
+                    session, "search_precedent", {"query": prec_query, "display": self.display}
                 )
                 precs = _parse_search_results(prec_xml)
                 for item in precs[: self.max_detail]:
@@ -109,38 +112,18 @@ class MCPRetriever:
                             LawDocument(doc_type="precedent", title=title, content=str(item))
                         )
 
-                # ── 공정위 결정문 검색 ─────────────────────────
-                ftc_xml = await self._call_tool(
-                    session, "search_ftc_decision", {"query": query, "display": self.display}
-                )
-                ftcs = _parse_search_results(ftc_xml)
-                for item in ftcs[: self.max_detail]:
-                    cid = item.get("의결번호") or item.get("ID") or item.get("id")
-                    title = item.get("사건명") or item.get("의결명") or item.get("title", "")
-                    if cid:
-                        content_xml = await self._call_tool(
-                            session, "get_ftc_decision_content", {"cmt_id": cid}
-                        )
-                        evidence.ftc_decisions.append(
-                            LawDocument(doc_type="ftc_decision", title=title, content=content_xml, source_id=cid)
-                        )
-                    elif title:
-                        evidence.ftc_decisions.append(
-                            LawDocument(doc_type="ftc_decision", title=title, content=str(item))
-                        )
-
         return evidence
 
-    def retrieve_sync(self, keywords: list[str]) -> ExternalEvidence:
+    def retrieve_sync(self, law_query: str, prec_query: str) -> ExternalEvidence:
         """동기 래퍼 (이미 이벤트 루프가 있을 경우 asyncio.run 대신 사용)."""
         try:
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 import concurrent.futures
                 with concurrent.futures.ThreadPoolExecutor() as pool:
-                    future = pool.submit(asyncio.run, self.retrieve(keywords))
+                    future = pool.submit(asyncio.run, self.retrieve(law_query, prec_query))
                     return future.result()
             else:
-                return loop.run_until_complete(self.retrieve(keywords))
+                return loop.run_until_complete(self.retrieve(law_query, prec_query))
         except RuntimeError:
-            return asyncio.run(self.retrieve(keywords))
+            return asyncio.run(self.retrieve(law_query, prec_query))

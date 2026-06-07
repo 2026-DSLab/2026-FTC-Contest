@@ -80,12 +80,16 @@ class HybridSearch:
 
         results = []
         for doc_id in sorted_ids:
-            doc = dense_docs.get(doc_id) or bm25_docs.get(doc_id)
+            dense_entry = dense_docs.get(doc_id)
+            bm25_entry = bm25_docs.get(doc_id)
+            doc = dense_entry or bm25_entry
             results.append({
                 "chunk_id": doc["chunk_id"],
                 "content": doc["content"],
                 "metadata": doc["metadata"],
-                "score": rrf_scores[doc_id]
+                "score": rrf_scores[doc_id],
+                "dense_rank": dense_entry["dense_rank"] if dense_entry else None,
+                "bm25_rank": bm25_entry["bm25_rank"] if bm25_entry else None,
             })
 
         return results

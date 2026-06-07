@@ -3,7 +3,10 @@ from rag.query.query_processor import process_query
 from rag.retrieval.hybrid_search import HybridSearch
 from rag.retrieval.reranker import Reranker
 from rag.retrieval.filter import llm_filter
-from schemas.rag_output import RAGOutput, ResolutionDoc, ScenarioDoc
+from schemas.rag_output import (
+    RAGOutput, ResolutionDoc, ScenarioDoc,
+    HybridSearchDoc, RerankedDoc, FilteredDoc,
+)
 
 
 class RAGPipeline:
@@ -25,6 +28,9 @@ class RAGPipeline:
         print("1. Query Processing 중...")
         processed = await process_query(user_query)
         rewritten_query = processed["rewritten_query"]
+        query_intent = processed.get("intent")
+        mcp_law_query = processed.get("mcp_law_query")
+        mcp_prec_query = processed.get("mcp_prec_query")
 
         print("2. 의결서 Hybrid Search 중...")
         hybrid_results = self.hybrid_search.search(
@@ -75,10 +81,49 @@ class RAGPipeline:
             for doc in scenario_results
         ]
 
+        # 중간 과정 추적 데이터 구성
+        hybrid_search_raw = [
+            HybridSearchDoc(
+                chunk_id=doc["chunk_id"],
+                content=doc["content"],
+                metadata=doc["metadata"],
+                dense_rank=doc.get("dense_rank"),
+                bm25_rank=doc.get("bm25_rank"),
+                rrf_score=doc.get("score", 0.0),
+            )
+            for doc in hybrid_results
+        ]
+
+        reranked_raw = [
+            RerankedDoc(
+                chunk_id=doc["chunk_id"],
+                content=doc["content"],
+                metadata=doc["metadata"],
+                rerank_score=doc.get("rerank_score", 0.0),
+            )
+            for doc in reranked
+        ]
+
+        filtered_raw = [
+            FilteredDoc(
+                chunk_id=doc["chunk_id"],
+                content=doc["content"],
+                metadata=doc["metadata"],
+                rerank_score=doc.get("rerank_score", 0.0),
+            )
+            for doc in filtered
+        ]
+
         return RAGOutput(
             user_query=user_query,
             situation_type=situation_type,
             rewritten_query=rewritten_query,
+            query_intent=query_intent,
+            mcp_law_query=mcp_law_query,
+            mcp_prec_query=mcp_prec_query,
             resolution_docs=resolution_docs,
-            scenario_docs=scenario_docs
+            scenario_docs=scenario_docs,
+            hybrid_search_raw=hybrid_search_raw,
+            reranked_raw=reranked_raw,
+            filtered_raw=filtered_raw,
         )
