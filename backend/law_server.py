@@ -149,7 +149,7 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
 
         elif name == "get_law_content":
             xml = await fetch_api(DETAIL_URL, {
-                "target": "lawService",
+                "target": "law",
                 "MST": arguments["mst"],
             })
             return [types.TextContent(type="text", text=xml[:8000])]
@@ -166,7 +166,7 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
 
         elif name == "get_precedent_content":
             xml = await fetch_api(DETAIL_URL, {
-                "target": "precService",
+                "target": "prec",
                 "ID": arguments["prec_id"],
             })
             return [types.TextContent(type="text", text=xml[:8000])]

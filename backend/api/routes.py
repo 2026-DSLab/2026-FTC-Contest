@@ -39,16 +39,17 @@ def diagnose(req: DiagnoseRequest):
         raise HTTPException(status_code=422, detail=f"situation_type은 다음 중 하나: {valid}")
     
     try:
-        result = pipeline.run(req.user_query, situation_type=situation)
+        result, pipeline_trace = pipeline.run_traced(req.user_query, situation_type=situation)
     except IrrelevantQueryError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
     data = result.model_dump()
 
-    # results/ 에 저장
+    # results/ 에 저장 (최종 결과 + 파이프라인 중간 과정 전체 포함)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     slug = req.user_query[:20].replace(" ", "_").replace("/", "-")
     save_path = _RESULTS_DIR / f"{ts}_{slug}.json"
-    save_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    save_data = {**data, "_pipeline_trace": pipeline_trace}
+    save_path.write_text(json.dumps(save_data, ensure_ascii=False, indent=2), encoding="utf-8")
 
     return JSONResponse(content=data)
