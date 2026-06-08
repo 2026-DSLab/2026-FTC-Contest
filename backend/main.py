@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 import os
 import sys
@@ -34,6 +35,12 @@ app.add_middleware(
 )
 
 app.include_router(router)
+
+
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/질문화면.html")
+
 
 # 프론트엔드 정적 파일 서빙
 frontend_dir = os.path.join(BASE_DIR, "frontend")
