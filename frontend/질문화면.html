@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="기업 컴플라이언스 AI 리스크 상담 시스템 - 공정거래 관련 법적 리스크를 AI로 진단합니다.">
+  <title>AI 리스크 상담 시스템 | 기업 컴플라이언스 진단</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --white: #ffffff;
+      --gray-50: #f8f9fb;
+      --gray-100: #f1f3f5;
+      --gray-200: #e5e8ec;
+      --gray-300: #d1d6dd;
+      --gray-400: #a0a8b4;
+      --gray-500: #6b7685;
+      --gray-600: #4e5968;
+      --gray-700: #333d4b;
+      --gray-800: #191f28;
+      --blue-50: #e8f3ff;
+      --blue-100: #c9e2ff;
+      --blue-200: #90beff;
+      --blue-400: #4593fc;
+      --blue-500: #2b7de9;
+      --blue-600: #1b64da;
+      --blue-700: #0051c7;
+      --green-50: #e8faf0;
+      --green-500: #1db26c;
+      --red-50: #fff0f0;
+      --red-100: #ffe0e0;
+      --red-400: #f04452;
+      --red-500: #e02d3c;
+      --red-600: #c4001d;
+      --orange-50: #fff8f0;
+      --orange-400: #f5820d;
+      --orange-500: #e06c00;
+      --accent: #2b7de9;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+      --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.1), 0 8px 20px rgba(0, 0, 0, 0.06);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--white);
+      color: var(--gray-800);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* ===== Header ===== */
+    header {
+      position: relative;
+      z-index: 10;
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-100);
+      padding: 0 2rem;
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .logo-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-icon img {
+      height: 100%;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-pill {
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--gray-500);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .nav-pill:hover {
+      background: var(--gray-100);
+      color: var(--gray-700);
+    }
+
+    .nav-pill.active {
+      background: var(--blue-50);
+      color: var(--blue-600);
+    }
+
+    /* ===== Main Content ===== */
+    main {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1.5rem 2rem;
+    }
+
+    .hero-section {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      background: var(--blue-50);
+      border: 1px solid var(--blue-100);
+      border-radius: 100px;
+      font-size: 0.78rem;
+      color: var(--blue-600);
+      font-weight: 500;
+      margin-bottom: 1.25rem;
+    }
+
+    .hero-badge svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .hero-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--gray-800);
+      letter-spacing: -0.03em;
+      line-height: 1.3;
+      margin-bottom: 0.75rem;
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, var(--blue-500), var(--blue-700));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-desc {
+      font-size: 1rem;
+      color: var(--gray-500);
+      font-weight: 400;
+      line-height: 1.6;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ===== Situation Type Selector ===== */
+    .situation-selector {
+      width: 100%;
+      max-width: 720px;
+      margin-bottom: 1.25rem;
+      animation: fadeInUp 0.65s ease-out 0.05s both;
+    }
+
+    .situation-label {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--gray-500);
+      margin-bottom: 0.6rem;
+      letter-spacing: 0.01em;
+    }
+
+    .situation-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .situation-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 16px;
+      border: 1px solid var(--gray-200);
+      border-radius: 100px;
+      background: var(--white);
+      font-family: 'Noto Sans KR', 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--gray-600);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .situation-btn:hover {
+      border-color: var(--blue-300);
+      color: var(--blue-600);
+    }
+
+    .situation-btn.active {
+      background: var(--blue-50);
+      border-color: var(--blue-400);
+      color: var(--blue-600);
+    }
+
+    /* ===== Input Card ===== */
+    .input-card {
+      width: 100%;
+      max-width: 720px;
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-xl);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-md);
+      animation: fadeInUp 0.7s ease-out 0.1s both;
+    }
+
+    .input-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: 0.75rem;
+    }
+
+    .input-label svg {
+      width: 16px;
+      height: 16px;
+      color: var(--blue-500);
+    }
+
+    .textarea-wrapper {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 0.875rem 1rem;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      font-family: 'Noto Sans KR', 'Inter', sans-serif;
+      font-size: 0.9rem;
+      color: var(--gray-800);
+      line-height: 1.6;
+      resize: vertical;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      background: var(--gray-50);
+    }
+
+    textarea:focus {
+      border-color: var(--blue-400);
+      box-shadow: 0 0 0 3px rgba(43, 125, 233, 0.1);
+      background: var(--white);
+    }
+
+    .textarea-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.4rem;
+      padding: 0 0.25rem;
+    }
+
+    .char-count {
+      font-size: 0.75rem;
+      color: var(--gray-400);
+    }
+
+    .textarea-hint {
+      font-size: 0.72rem;
+      color: var(--gray-400);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    kbd {
+      padding: 1px 5px;
+      background: var(--gray-100);
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-family: monospace;
+    }
+
+    .submit-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .example-hint {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: var(--gray-400);
+    }
+
+    .example-hint svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    #submit-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      background: var(--blue-500);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: 'Noto Sans KR', 'Inter', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+
+    #submit-btn:hover {
+      background: var(--blue-600);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(43, 125, 233, 0.3);
+    }
+
+    #submit-btn:disabled {
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    #submit-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .spin {
+      animation: spin 1s linear infinite;
+    }
+
+    /* ===== Data Sources ===== */
+    .data-sources {
+      width: 100%;
+      max-width: 720px;
+      margin-top: 1.5rem;
+      animation: fadeInUp 0.75s ease-out 0.15s both;
+    }
+
+    .sources-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--gray-400);
+      margin-bottom: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .sources-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .source-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-100);
+      border-radius: var(--radius-md);
+    }
+
+    .source-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .source-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .source-icon.blue { background: var(--blue-50); color: var(--blue-500); }
+    .source-icon.green { background: var(--green-50); color: var(--green-500); }
+    .source-icon.purple { background: #f3f0ff; color: #7c3aed; }
+
+    .source-info { flex: 1; min-width: 0; }
+
+    .source-name {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--gray-700);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .source-desc {
+      font-size: 0.7rem;
+      color: var(--gray-400);
+      margin-top: 1px;
+    }
+
+    /* ===== Error message ===== */
+    #error-msg {
+      display: none;
+      width: 100%;
+      max-width: 720px;
+      margin-top: 1rem;
+      padding: 12px 16px;
+      background: #fff0f0;
+      border: 1px solid #ffc0c0;
+      border-radius: var(--radius-md);
+      color: #c0392b;
+      font-size: 0.85rem;
+    }
+
+    /* ===== Footer ===== */
+    footer {
+      text-align: center;
+      padding: 1.25rem 1.5rem;
+      font-size: 0.75rem;
+      color: var(--gray-400);
+      border-top: 1px solid var(--gray-100);
+    }
+
+    footer a {
+      color: var(--gray-400);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      color: var(--gray-600);
+    }
+
+    /* ===== Guide Overlay ===== */
+    .guide-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      pointer-events: auto;
+      background: transparent;
+    }
+
+    .guide-overlay[hidden] { display: none; }
+
+    .guide-close {
+      position: fixed;
+      top: 18px;
+      right: 22px;
+      z-index: 2003;
+      pointer-events: auto;
+      border: 2px solid var(--red-500);
+      background: rgba(255, 255, 255, 0.96);
+      color: var(--red-500);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 28px rgba(220, 38, 38, 0.16);
+    }
+
+    body.guide-mode [data-guide] {
+      position: relative;
+      outline: 3px solid var(--red-500);
+      outline-offset: 6px;
+      border-radius: 16px;
+    }
+
+    body.guide-mode [data-guide]::before {
+      content: "";
+      position: absolute;
+      inset: -12px;
+      border: 2px dashed rgba(239, 68, 68, 0.42);
+      border-radius: 20px;
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    body.guide-mode [data-guide]::after {
+      content: attr(data-guide-no);
+      position: absolute;
+      top: -18px;
+      left: -18px;
+      z-index: 31;
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      background: var(--white);
+      border: 2px solid var(--red-500);
+      border-radius: 50%;
+      color: var(--red-500);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 800;
+      box-shadow: 0 8px 18px rgba(220, 38, 38, 0.16);
+      pointer-events: none;
+    }
+
+    .guide-panel {
+      position: fixed;
+      top: 66px;
+      right: 22px;
+      z-index: 2003;
+      width: min(310px, calc(100vw - 44px));
+      max-height: calc(100vh - 98px);
+      overflow: auto;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.97);
+      border: 2px solid var(--red-500);
+      border-radius: 16px;
+      box-shadow: 0 18px 42px rgba(220, 38, 38, 0.16);
+      color: var(--gray-700);
+      pointer-events: auto;
+    }
+
+    .guide-panel-title {
+      margin-bottom: 10px;
+      color: var(--red-500);
+      font-size: 0.85rem;
+      font-weight: 900;
+    }
+
+    .guide-panel ol {
+      display: grid;
+      gap: 9px;
+      margin: 0;
+      padding-left: 1.25rem;
+    }
+
+    .guide-panel li {
+      font-size: 0.76rem;
+      line-height: 1.55;
+      font-weight: 700;
+      word-break: keep-all;
+    }
+
+    .guide-panel li::marker {
+      color: var(--red-500);
+      font-weight: 900;
+    }
+
+    @media (max-width: 768px) {
+      .header-nav { display: none; }
+      .hero-title { font-size: 1.5rem; }
+      .hero-desc { font-size: 0.9rem; }
+      .input-card { padding: 1.25rem; }
+      .sources-grid { grid-template-columns: 1fr; }
+      .submit-row { flex-direction: column; align-items: stretch; }
+      .example-hint { justify-content: center; order: 2; }
+      #submit-btn { justify-content: center; order: 1; }
+      .guide-panel {
+        top: auto;
+        right: 12px;
+        bottom: 12px;
+        left: 12px;
+        width: auto;
+        max-height: 42vh;
+      }
+    }
+
+    @media (max-width: 480px) {
+      main { padding: 2rem 1rem 1.5rem; }
+      .hero-title { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== Header ===== -->
+  <header>
+    <div class="header-inner">
+      <div class="logo-group">
+        <div class="logo-icon">
+          <img src="헤아림.jpg" alt="헤아림 로고">
+        </div>
+      </div>
+      <div class="header-nav">
+        <button class="nav-pill active" id="nav-consult">상담</button>
+        <button class="nav-pill" id="nav-history">이력</button>
+        <button class="nav-pill" id="nav-guide">가이드</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== Main ===== -->
+  <main>
+    <section class="hero-section">
+      <div class="hero-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+        </svg>
+        AI 기반 공정거래 리스크 진단
+      </div>
+      <h1 class="hero-title">거래 상황을 입력하면,<br><span>법적 리스크</span>를 진단해 드립니다</h1>
+      <p class="hero-desc">공정위 의결서, 컴플라이언스 QA, 관련 법령을 기반으로<br>AI가 실시간 리스크 분석 결과를 제공합니다.</p>
+    </section>
+
+    <!-- ===== Situation Selector ===== -->
+    <div class="situation-selector" data-guide data-guide-no="1">
+      <div class="situation-label">상황 유형 선택</div>
+      <div class="situation-buttons">
+        <button class="situation-btn" data-type="contract_before">계약 체결 전</button>
+        <button class="situation-btn" data-type="in_progress">거래 진행 중</button>
+        <button class="situation-btn active" data-type="suspected">위반 의심</button>
+        <button class="situation-btn" data-type="regular_check">정기 점검</button>
+      </div>
+    </div>
+
+    <div class="input-card" id="input-card" data-guide data-guide-no="2">
+      <label class="input-label" for="question-input">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+        </svg>
+        거래 상황 입력
+      </label>
+      <div class="textarea-wrapper">
+        <textarea
+          id="question-input"
+          placeholder="현재 기업이 처한 거래 상황을 자연어로 입력하세요"
+        ></textarea>
+        <div class="textarea-footer">
+          <span class="char-count" id="char-count">0자</span>
+          <span class="textarea-hint">
+            <kbd>Shift</kbd> + <kbd>Enter</kbd> 줄바꿈
+          </span>
+        </div>
+      </div>
+
+      <div class="submit-row">
+        <span class="example-hint">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+          </svg>
+          구체적인 상황을 기술할수록 정확한 진단이 가능합니다
+        </span>
+        <button id="submit-btn" type="button">
+          진단 시작
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="error-msg"></div>
+
+    <!-- ===== Data Sources ===== -->
+    <div class="data-sources" data-guide data-guide-no="3">
+      <div class="sources-label">데이터 소스</div>
+      <div class="sources-grid">
+        <div class="source-card">
+          <div class="source-icon blue">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+          </div>
+          <div class="source-info">
+            <div class="source-name">공정위 의결서 DB</div>
+            <div class="source-desc">심결례 데이터베이스</div>
+          </div>
+        </div>
+        <div class="source-card">
+          <div class="source-icon green">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
+            </svg>
+          </div>
+          <div class="source-info">
+            <div class="source-name">컴플라이언스 QA DB</div>
+            <div class="source-desc">질의응답 데이터</div>
+          </div>
+        </div>
+        <div class="source-card">
+          <div class="source-icon purple">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" />
+            </svg>
+          </div>
+          <div class="source-info">
+            <div class="source-name">법령 API</div>
+            <div class="source-desc">법령정보 연동</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer>
+    © 2026 AI 리스크 상담 시스템 &nbsp;·&nbsp; 공정거래위원회 컴플라이언스 프로그램 &nbsp;·&nbsp;
+    <a href="#">이용약관</a> &nbsp;·&nbsp; <a href="#">개인정보처리방침</a>
+  </footer>
+
+  <div class="guide-overlay" id="guide-overlay" hidden>
+    <button class="guide-close" id="guide-close-btn" type="button">가이드 닫기</button>
+    <div class="guide-panel" aria-label="질문 화면 가이드">
+      <div class="guide-panel-title">질문 화면 가이드</div>
+      <ol>
+        <li>질문이 어떤 상황에 해당하는지 선택하는 영역입니다.</li>
+        <li>기업의 거래 상황이나 궁금한 내용을 자연어로 입력하는 영역입니다.</li>
+        <li>분석에 참고되는 의결서, QA, 법령 데이터 출처를 보여줍니다.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ===== Script ===== -->
+  <script>
+    const API_URL = "http://localhost:8000/diagnose";
+
+    // 현재 선택된 situation_type
+    let selectedSituationType = "suspected";
+
+    // Character count
+    const textarea = document.getElementById('question-input');
+    const charCount = document.getElementById('char-count');
+
+    function updateCharCount() {
+      charCount.textContent = textarea.value.length + '자';
+    }
+    textarea.addEventListener('input', updateCharCount);
+
+    // Situation type selector
+    const situationBtns = document.querySelectorAll('.situation-btn');
+    situationBtns.forEach(btn => {
+      btn.addEventListener('click', function () {
+        situationBtns.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        selectedSituationType = this.dataset.type;
+      });
+    });
+
+    // Submit
+    const submitBtn = document.getElementById('submit-btn');
+    const errorMsg = document.getElementById('error-msg');
+
+    submitBtn.addEventListener('click', async function () {
+      const text = textarea.value.trim();
+      if (!text) {
+        textarea.focus();
+        return;
+      }
+
+      // 로딩 상태
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `
+        <svg class="spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
+        </svg>
+        분석 중...
+      `;
+      submitBtn.style.opacity = '0.8';
+      errorMsg.style.display = 'none';
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_query: text,
+            situation_type: selectedSituationType
+          })
+        });
+
+        if (response.status === 400) {
+          const err = await response.json();
+          throw new Error(err.detail || '관련 없는 질문입니다.');
+        }
+        if (!response.ok) throw new Error('서버 오류: ' + response.status);
+
+        const result = await response.json();
+
+        // 결과를 sessionStorage에 저장 후 결과 화면으로 이동
+        sessionStorage.setItem('diagnoseResult', JSON.stringify(result));
+        window.location.href = '결과화면(예시).html';
+
+      } catch (err) {
+        errorMsg.textContent = '오류가 발생했습니다: ' + err.message;
+        errorMsg.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `
+          진단 시작
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+          </svg>
+        `;
+        submitBtn.style.opacity = '1';
+      }
+    });
+
+    // Keyboard shortcut
+    textarea.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitBtn.click();
+      }
+    });
+
+    // Guide overlay
+    const guideOverlay = document.getElementById('guide-overlay');
+    const guideOpenBtn = document.getElementById('nav-guide');
+    const guideCloseBtn = document.getElementById('guide-close-btn');
+
+    function openGuide() {
+      if (!guideOverlay) return;
+      guideOverlay.hidden = false;
+      document.body.classList.add('guide-mode');
+    }
+
+    function closeGuide() {
+      if (!guideOverlay) return;
+      guideOverlay.hidden = true;
+      document.body.classList.remove('guide-mode');
+    }
+
+    guideOpenBtn?.addEventListener('click', openGuide);
+    guideCloseBtn?.addEventListener('click', closeGuide);
+    guideOverlay?.addEventListener('click', event => {
+      if (event.target === guideOverlay) closeGuide();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeGuide();
+    });
+  </script>
+</body>
+</html>
