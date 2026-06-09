@@ -9,607 +9,116 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ===== Reset & Base ===== */
-    *, *::before, *::after {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
-      --white: #ffffff;
-      --gray-50: #f8f9fb;
-      --gray-100: #f1f3f5;
-      --gray-200: #e5e8ec;
-      --gray-300: #d1d6dd;
-      --gray-400: #a0a8b4;
-      --gray-500: #6b7685;
-      --gray-600: #4e5968;
-      --gray-700: #333d4b;
-      --gray-800: #191f28;
-      --blue-50: #e8f3ff;
-      --blue-100: #c9e2ff;
-      --blue-200: #90beff;
-      --blue-400: #4593fc;
-      --blue-500: #2b7de9;
-      --blue-600: #1b64da;
-      --blue-700: #0051c7;
-      --green-50: #e8faf0;
-      --green-500: #1db26c;
-      --red-50: #fff0f0;
-      --red-100: #ffe0e0;
-      --red-400: #f04452;
-      --red-500: #e02d3c;
-      --red-600: #c4001d;
-      --orange-50: #fff8f0;
-      --orange-400: #f5820d;
-      --orange-500: #e06c00;
-      --accent: #2b7de9;
-      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
-      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
-      --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
-      --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.1), 0 8px 20px rgba(0, 0, 0, 0.06);
-      --radius-sm: 8px;
-      --radius-md: 12px;
-      --radius-lg: 16px;
-      --radius-xl: 20px;
-      --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      --white: #ffffff; --gray-50: #f8f9fb; --gray-100: #f1f3f5; --gray-200: #e5e8ec;
+      --gray-300: #d1d6dd; --gray-400: #a0a8b4; --gray-500: #6b7685; --gray-600: #4e5968;
+      --gray-700: #333d4b; --gray-800: #191f28;
+      --blue-50: #e8f3ff; --blue-100: #c9e2ff; --blue-200: #90beff; --blue-400: #4593fc;
+      --blue-500: #2b7de9; --blue-600: #1b64da; --blue-700: #0051c7;
+      --green-50: #e8faf0; --green-500: #1db26c;
+      --red-50: #fff0f0; --red-100: #ffe0e0; --red-400: #f04452; --red-500: #e02d3c;
+      --orange-50: #fff8f0; --orange-500: #e06c00;
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+      --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 20px;
+      --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
     }
+    html { font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body { font-family: 'Noto Sans KR','Inter',-apple-system,sans-serif; background: var(--white); color: var(--gray-800); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
 
-    html {
-      font-size: 16px;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
+    /* Header */
+    header { position: relative; z-index: 10; background: var(--white); border-bottom: 1px solid var(--gray-100); padding: 0 2rem; }
+    .header-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .logo-group { display: flex; align-items: center; gap: 12px; }
+    .logo-icon { height: 46px; display: flex; align-items: center; justify-content: center; }
+    .logo-icon img { height: 100%; width: auto; object-fit: contain; }
+    .header-nav { display: flex; align-items: center; gap: 8px; }
+    .nav-pill { padding: 6px 14px; border-radius: 100px; font-size: 0.8rem; font-weight: 500; color: var(--gray-500); background: transparent; border: none; cursor: pointer; transition: var(--transition); }
+    .nav-pill:hover { background: var(--gray-100); color: var(--gray-700); }
+    .nav-pill.active { background: var(--blue-50); color: var(--blue-600); }
 
-    body {
-      font-family: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--white);
-      color: var(--gray-800);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow-x: hidden;
-    }
+    /* Main */
+    main { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 1.5rem 2rem; }
+    .hero-section { text-align: center; margin-bottom: 2.5rem; animation: fadeInUp 0.6s ease-out; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; background: var(--blue-50); border: 1px solid var(--blue-100); border-radius: 100px; font-size: 0.78rem; color: var(--blue-600); font-weight: 500; margin-bottom: 1.25rem; }
+    .hero-badge svg { width: 14px; height: 14px; }
+    .hero-title { font-size: 2rem; font-weight: 700; color: var(--gray-800); letter-spacing: -0.03em; line-height: 1.3; margin-bottom: 0.75rem; }
+    .hero-title span { background: linear-gradient(135deg, var(--blue-500), var(--blue-700)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero-desc { font-size: 1rem; color: var(--gray-500); font-weight: 400; line-height: 1.6; max-width: 480px; margin: 0 auto; }
 
-    /* ===== Header ===== */
-    header {
-      position: relative;
-      z-index: 10;
-      background: var(--white);
-      border-bottom: 1px solid var(--gray-100);
-      padding: 0 2rem;
-    }
+    /* Situation */
+    .situation-selector { width: 100%; max-width: 720px; margin-bottom: 1.25rem; animation: fadeInUp 0.65s ease-out 0.05s both; }
+    .situation-label { font-size: 0.78rem; font-weight: 500; color: var(--gray-500); margin-bottom: 0.6rem; letter-spacing: 0.01em; }
+    .situation-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+    .situation-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border: 1px solid var(--gray-200); border-radius: 100px; background: var(--white); font-family: 'Noto Sans KR','Inter',sans-serif; font-size: 0.8rem; font-weight: 500; color: var(--gray-600); cursor: pointer; transition: all var(--transition); }
+    .situation-btn:hover { border-color: var(--blue-200); color: var(--blue-600); }
+    .situation-btn.active { background: var(--blue-50); border-color: var(--blue-400); color: var(--blue-600); }
 
-    .header-inner {
-      max-width: 1100px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 64px;
-    }
+    /* Input Card */
+    .input-card { width: 100%; max-width: 720px; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-xl); padding: 1.5rem; box-shadow: var(--shadow-md); animation: fadeInUp 0.7s ease-out 0.1s both; }
+    .input-label { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 600; color: var(--gray-700); margin-bottom: 0.75rem; }
+    .input-label svg { width: 16px; height: 16px; color: var(--blue-500); }
+    .textarea-wrapper { position: relative; margin-bottom: 1rem; }
+    textarea { width: 100%; min-height: 120px; padding: 0.875rem 1rem; border: 1px solid var(--gray-200); border-radius: var(--radius-md); font-family: 'Noto Sans KR','Inter',sans-serif; font-size: 0.9rem; color: var(--gray-800); line-height: 1.6; resize: vertical; outline: none; transition: border-color var(--transition), box-shadow var(--transition); background: var(--gray-50); }
+    textarea:focus { border-color: var(--blue-400); box-shadow: 0 0 0 3px rgba(43,125,233,0.1); background: var(--white); }
+    .textarea-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 0.4rem; padding: 0 0.25rem; }
+    .char-count { font-size: 0.75rem; color: var(--gray-400); }
+    .textarea-hint { font-size: 0.72rem; color: var(--gray-400); display: flex; align-items: center; gap: 4px; }
+    kbd { padding: 1px 5px; background: var(--gray-100); border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.68rem; font-family: monospace; }
+    .submit-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .example-hint { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--gray-400); }
+    .example-hint svg { width: 14px; height: 14px; flex-shrink: 0; }
+    #submit-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; background: var(--blue-500); color: var(--white); border: none; border-radius: var(--radius-md); font-family: 'Noto Sans KR','Inter',sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all var(--transition); white-space: nowrap; }
+    #submit-btn:hover { background: var(--blue-600); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(43,125,233,0.3); }
+    #submit-btn:disabled { cursor: not-allowed; transform: none; box-shadow: none; }
+    #submit-btn svg { width: 18px; height: 18px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 1s linear infinite; }
 
-    .logo-group {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .logo-icon {
-      height: 46px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .logo-icon img {
-      height: 100%;
-      width: auto;
-      object-fit: contain;
-    }
-
-    .header-nav {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .nav-pill {
-      padding: 6px 14px;
-      border-radius: 100px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--gray-500);
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      transition: var(--transition);
-    }
-
-    .nav-pill:hover {
-      background: var(--gray-100);
-      color: var(--gray-700);
-    }
-
-    .nav-pill.active {
-      background: var(--blue-50);
-      color: var(--blue-600);
-    }
-
-    /* ===== Main Content ===== */
-    main {
-      position: relative;
-      z-index: 1;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 3rem 1.5rem 2rem;
-    }
-
-    .hero-section {
-      text-align: center;
-      margin-bottom: 2.5rem;
-      animation: fadeInUp 0.6s ease-out;
-    }
-
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 16px;
-      background: var(--blue-50);
-      border: 1px solid var(--blue-100);
-      border-radius: 100px;
-      font-size: 0.78rem;
-      color: var(--blue-600);
-      font-weight: 500;
-      margin-bottom: 1.25rem;
-    }
-
-    .hero-badge svg {
-      width: 14px;
-      height: 14px;
-    }
-
-    .hero-title {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--gray-800);
-      letter-spacing: -0.03em;
-      line-height: 1.3;
-      margin-bottom: 0.75rem;
-    }
-
-    .hero-title span {
-      background: linear-gradient(135deg, var(--blue-500), var(--blue-700));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .hero-desc {
-      font-size: 1rem;
-      color: var(--gray-500);
-      font-weight: 400;
-      line-height: 1.6;
-      max-width: 480px;
-      margin: 0 auto;
-    }
-
-    /* ===== Situation Type Selector ===== */
-    .situation-selector {
-      width: 100%;
-      max-width: 720px;
-      margin-bottom: 1.25rem;
-      animation: fadeInUp 0.65s ease-out 0.05s both;
-    }
-
-    .situation-label {
-      font-size: 0.78rem;
-      font-weight: 500;
-      color: var(--gray-500);
-      margin-bottom: 0.6rem;
-      letter-spacing: 0.01em;
-    }
-
-    .situation-buttons {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .situation-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 7px 16px;
-      border: 1px solid var(--gray-200);
-      border-radius: 100px;
-      background: var(--white);
-      font-family: 'Noto Sans KR', 'Inter', sans-serif;
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--gray-600);
-      cursor: pointer;
-      transition: all var(--transition);
-    }
-
-    .situation-btn:hover {
-      border-color: var(--blue-300);
-      color: var(--blue-600);
-    }
-
-    .situation-btn.active {
-      background: var(--blue-50);
-      border-color: var(--blue-400);
-      color: var(--blue-600);
-    }
-
-    /* ===== Input Card ===== */
-    .input-card {
-      width: 100%;
-      max-width: 720px;
-      background: var(--white);
-      border: 1px solid var(--gray-200);
-      border-radius: var(--radius-xl);
-      padding: 1.5rem;
-      box-shadow: var(--shadow-md);
-      animation: fadeInUp 0.7s ease-out 0.1s both;
-    }
-
-    .input-label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--gray-700);
-      margin-bottom: 0.75rem;
-    }
-
-    .input-label svg {
-      width: 16px;
-      height: 16px;
-      color: var(--blue-500);
-    }
-
-    .textarea-wrapper {
-      position: relative;
-      margin-bottom: 1rem;
-    }
-
-    textarea {
-      width: 100%;
-      min-height: 120px;
-      padding: 0.875rem 1rem;
-      border: 1px solid var(--gray-200);
-      border-radius: var(--radius-md);
-      font-family: 'Noto Sans KR', 'Inter', sans-serif;
-      font-size: 0.9rem;
-      color: var(--gray-800);
-      line-height: 1.6;
-      resize: vertical;
-      outline: none;
-      transition: border-color var(--transition), box-shadow var(--transition);
-      background: var(--gray-50);
-    }
-
-    textarea:focus {
-      border-color: var(--blue-400);
-      box-shadow: 0 0 0 3px rgba(43, 125, 233, 0.1);
-      background: var(--white);
-    }
-
-    .textarea-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 0.4rem;
-      padding: 0 0.25rem;
-    }
-
-    .char-count {
-      font-size: 0.75rem;
-      color: var(--gray-400);
-    }
-
-    .textarea-hint {
-      font-size: 0.72rem;
-      color: var(--gray-400);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    kbd {
-      padding: 1px 5px;
-      background: var(--gray-100);
-      border: 1px solid var(--gray-300);
-      border-radius: 4px;
-      font-size: 0.68rem;
-      font-family: monospace;
-    }
-
-    .submit-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-
-    .example-hint {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.78rem;
-      color: var(--gray-400);
-    }
-
-    .example-hint svg {
-      width: 14px;
-      height: 14px;
-      flex-shrink: 0;
-    }
-
-    #submit-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 22px;
-      background: var(--blue-500);
-      color: var(--white);
-      border: none;
-      border-radius: var(--radius-md);
-      font-family: 'Noto Sans KR', 'Inter', sans-serif;
-      font-size: 0.88rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all var(--transition);
-      white-space: nowrap;
-    }
-
-    #submit-btn:hover {
-      background: var(--blue-600);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(43, 125, 233, 0.3);
-    }
-
-    #submit-btn:disabled {
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-
-    #submit-btn svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .spin {
-      animation: spin 1s linear infinite;
-    }
-
-    /* ===== Data Sources ===== */
-    .data-sources {
-      width: 100%;
-      max-width: 720px;
-      margin-top: 1.5rem;
-      animation: fadeInUp 0.75s ease-out 0.15s both;
-    }
-
-    .sources-label {
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: var(--gray-400);
-      margin-bottom: 0.6rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .sources-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-
-    .source-card {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      background: var(--gray-50);
-      border: 1px solid var(--gray-100);
-      border-radius: var(--radius-md);
-    }
-
-    .source-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .source-icon svg {
-      width: 16px;
-      height: 16px;
-    }
-
+    /* Data Sources */
+    .data-sources { width: 100%; max-width: 720px; margin-top: 1.5rem; animation: fadeInUp 0.75s ease-out 0.15s both; }
+    .sources-label { font-size: 0.75rem; font-weight: 500; color: var(--gray-400); margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .sources-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .source-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--gray-50); border: 1px solid var(--gray-100); border-radius: var(--radius-md); }
+    .source-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .source-icon svg { width: 16px; height: 16px; }
     .source-icon.blue { background: var(--blue-50); color: var(--blue-500); }
     .source-icon.green { background: var(--green-50); color: var(--green-500); }
     .source-icon.purple { background: #f3f0ff; color: #7c3aed; }
-
     .source-info { flex: 1; min-width: 0; }
+    .source-name { font-size: 0.78rem; font-weight: 600; color: var(--gray-700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .source-desc { font-size: 0.7rem; color: var(--gray-400); margin-top: 1px; }
 
-    .source-name {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--gray-700);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+    /* Error */
+    #error-msg { display: none; width: 100%; max-width: 720px; margin-top: 1rem; padding: 12px 16px; background: #fff0f0; border: 1px solid #ffc0c0; border-radius: var(--radius-md); color: #c0392b; font-size: 0.85rem; }
 
-    .source-desc {
-      font-size: 0.7rem;
-      color: var(--gray-400);
-      margin-top: 1px;
-    }
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; z-index: 3000; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-overlay[hidden] { display: none; }
+    .modal-box { background: var(--white); border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 520px; max-height: 80vh; overflow-y: auto; position: relative; }
+    .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--gray-800); margin-bottom: 1.25rem; }
+    .modal-body { font-size: 0.85rem; color: var(--gray-600); line-height: 1.8; }
+    .modal-body h4 { font-size: 0.9rem; font-weight: 700; color: var(--gray-700); margin: 1rem 0 0.4rem; }
+    .modal-close { position: absolute; top: 1rem; right: 1rem; width: 28px; height: 28px; border: none; background: var(--gray-100); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--gray-500); }
+    .modal-close:hover { background: var(--gray-200); }
 
-    /* ===== Error message ===== */
-    #error-msg {
-      display: none;
-      width: 100%;
-      max-width: 720px;
-      margin-top: 1rem;
-      padding: 12px 16px;
-      background: #fff0f0;
-      border: 1px solid #ffc0c0;
-      border-radius: var(--radius-md);
-      color: #c0392b;
-      font-size: 0.85rem;
-    }
+    /* Footer */
+    footer { text-align: center; padding: 1.25rem 1.5rem; font-size: 0.75rem; color: var(--gray-400); border-top: 1px solid var(--gray-100); }
+    footer a, footer button { color: var(--gray-400); text-decoration: none; background: none; border: none; cursor: pointer; font-size: 0.75rem; transition: color var(--transition); }
+    footer a:hover, footer button:hover { color: var(--gray-600); }
 
-    /* ===== Footer ===== */
-    footer {
-      text-align: center;
-      padding: 1.25rem 1.5rem;
-      font-size: 0.75rem;
-      color: var(--gray-400);
-      border-top: 1px solid var(--gray-100);
-    }
-
-    footer a {
-      color: var(--gray-400);
-      text-decoration: none;
-    }
-
-    footer a:hover {
-      color: var(--gray-600);
-    }
-
-    /* ===== Guide Overlay ===== */
-    .guide-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 2000;
-      pointer-events: auto;
-      background: transparent;
-    }
-
+    /* Guide */
+    .guide-overlay { position: fixed; inset: 0; z-index: 2000; pointer-events: auto; background: transparent; }
     .guide-overlay[hidden] { display: none; }
-
-    .guide-close {
-      position: fixed;
-      top: 18px;
-      right: 22px;
-      z-index: 2003;
-      pointer-events: auto;
-      border: 2px solid var(--red-500);
-      background: rgba(255, 255, 255, 0.96);
-      color: var(--red-500);
-      border-radius: 999px;
-      padding: 8px 14px;
-      font-size: 0.78rem;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 10px 28px rgba(220, 38, 38, 0.16);
-    }
-
-    body.guide-mode [data-guide] {
-      position: relative;
-      outline: 3px solid var(--red-500);
-      outline-offset: 6px;
-      border-radius: 16px;
-    }
-
-    body.guide-mode [data-guide]::before {
-      content: "";
-      position: absolute;
-      inset: -12px;
-      border: 2px dashed rgba(239, 68, 68, 0.42);
-      border-radius: 20px;
-      pointer-events: none;
-      z-index: 30;
-    }
-
-    body.guide-mode [data-guide]::after {
-      content: attr(data-guide-no);
-      position: absolute;
-      top: -18px;
-      left: -18px;
-      z-index: 31;
-      display: grid;
-      place-items: center;
-      width: 28px;
-      height: 28px;
-      background: var(--white);
-      border: 2px solid var(--red-500);
-      border-radius: 50%;
-      color: var(--red-500);
-      font-family: 'Inter', sans-serif;
-      font-size: 0.78rem;
-      font-weight: 800;
-      box-shadow: 0 8px 18px rgba(220, 38, 38, 0.16);
-      pointer-events: none;
-    }
-
-    .guide-panel {
-      position: fixed;
-      top: 66px;
-      right: 22px;
-      z-index: 2003;
-      width: min(310px, calc(100vw - 44px));
-      max-height: calc(100vh - 98px);
-      overflow: auto;
-      padding: 14px;
-      background: rgba(255, 255, 255, 0.97);
-      border: 2px solid var(--red-500);
-      border-radius: 16px;
-      box-shadow: 0 18px 42px rgba(220, 38, 38, 0.16);
-      color: var(--gray-700);
-      pointer-events: auto;
-    }
-
-    .guide-panel-title {
-      margin-bottom: 10px;
-      color: var(--red-500);
-      font-size: 0.85rem;
-      font-weight: 900;
-    }
-
-    .guide-panel ol {
-      display: grid;
-      gap: 9px;
-      margin: 0;
-      padding-left: 1.25rem;
-    }
-
-    .guide-panel li {
-      font-size: 0.76rem;
-      line-height: 1.55;
-      font-weight: 700;
-      word-break: keep-all;
-    }
-
-    .guide-panel li::marker {
-      color: var(--red-500);
-      font-weight: 900;
-    }
+    .guide-close { position: fixed; top: 18px; right: 22px; z-index: 2003; pointer-events: auto; border: 2px solid var(--red-500); background: rgba(255,255,255,0.96); color: var(--red-500); border-radius: 999px; padding: 8px 14px; font-size: 0.78rem; font-weight: 800; cursor: pointer; }
+    body.guide-mode [data-guide] { position: relative; outline: 3px solid var(--red-500); outline-offset: 6px; border-radius: 16px; }
+    body.guide-mode [data-guide]::before { content: ""; position: absolute; inset: -12px; border: 2px dashed rgba(239,68,68,0.42); border-radius: 20px; pointer-events: none; z-index: 30; }
+    body.guide-mode [data-guide]::after { content: attr(data-guide-no); position: absolute; top: -18px; left: -18px; z-index: 31; display: grid; place-items: center; width: 28px; height: 28px; background: var(--white); border: 2px solid var(--red-500); border-radius: 50%; color: var(--red-500); font-family: 'Inter',sans-serif; font-size: 0.78rem; font-weight: 800; box-shadow: 0 8px 18px rgba(220,38,38,0.16); pointer-events: none; }
+    .guide-panel { position: fixed; top: 66px; right: 22px; z-index: 2003; width: min(310px,calc(100vw - 44px)); max-height: calc(100vh - 98px); overflow: auto; padding: 14px; background: rgba(255,255,255,0.97); border: 2px solid var(--red-500); border-radius: 16px; color: var(--gray-700); pointer-events: auto; }
+    .guide-panel-title { margin-bottom: 10px; color: var(--red-500); font-size: 0.85rem; font-weight: 900; }
+    .guide-panel ol { display: grid; gap: 9px; margin: 0; padding-left: 1.25rem; }
+    .guide-panel li { font-size: 0.76rem; line-height: 1.55; font-weight: 700; word-break: keep-all; }
 
     @media (max-width: 768px) {
       .header-nav { display: none; }
@@ -620,25 +129,13 @@
       .submit-row { flex-direction: column; align-items: stretch; }
       .example-hint { justify-content: center; order: 2; }
       #submit-btn { justify-content: center; order: 1; }
-      .guide-panel {
-        top: auto;
-        right: 12px;
-        bottom: 12px;
-        left: 12px;
-        width: auto;
-        max-height: 42vh;
-      }
     }
-
-    @media (max-width: 480px) {
-      main { padding: 2rem 1rem 1.5rem; }
-      .hero-title { font-size: 1.3rem; }
-    }
+    @media (max-width: 480px) { main { padding: 2rem 1rem 1.5rem; } .hero-title { font-size: 1.3rem; } }
   </style>
 </head>
 <body>
 
-  <!-- ===== Header ===== -->
+  <!-- Header -->
   <header>
     <div class="header-inner">
       <div class="logo-group">
@@ -648,13 +145,12 @@
       </div>
       <div class="header-nav">
         <button class="nav-pill active" id="nav-consult">상담</button>
-        <button class="nav-pill" id="nav-history">이력</button>
         <button class="nav-pill" id="nav-guide">가이드</button>
       </div>
     </div>
   </header>
 
-  <!-- ===== Main ===== -->
+  <!-- Main -->
   <main>
     <section class="hero-section">
       <div class="hero-badge">
@@ -667,7 +163,7 @@
       <p class="hero-desc">공정위 의결서, 컴플라이언스 QA, 관련 법령을 기반으로<br>AI가 실시간 리스크 분석 결과를 제공합니다.</p>
     </section>
 
-    <!-- ===== Situation Selector ===== -->
+    <!-- Situation Selector -->
     <div class="situation-selector" data-guide data-guide-no="1">
       <div class="situation-label">상황 유형 선택</div>
       <div class="situation-buttons">
@@ -686,18 +182,12 @@
         거래 상황 입력
       </label>
       <div class="textarea-wrapper">
-        <textarea
-          id="question-input"
-          placeholder="현재 기업이 처한 거래 상황을 자연어로 입력하세요"
-        ></textarea>
+        <textarea id="question-input" placeholder="현재 기업이 처한 거래 상황을 자연어로 입력하세요"></textarea>
         <div class="textarea-footer">
           <span class="char-count" id="char-count">0자</span>
-          <span class="textarea-hint">
-            <kbd>Shift</kbd> + <kbd>Enter</kbd> 줄바꿈
-          </span>
+          <span class="textarea-hint"><kbd>Shift</kbd> + <kbd>Enter</kbd> 줄바꿈</span>
         </div>
       </div>
-
       <div class="submit-row">
         <span class="example-hint">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -716,7 +206,7 @@
 
     <div id="error-msg"></div>
 
-    <!-- ===== Data Sources ===== -->
+    <!-- Data Sources -->
     <div class="data-sources" data-guide data-guide-no="3">
       <div class="sources-label">데이터 소스</div>
       <div class="sources-grid">
@@ -757,15 +247,55 @@
     </div>
   </main>
 
-  <!-- ===== Footer ===== -->
+  <!-- Footer -->
   <footer>
     © 2026 AI 리스크 상담 시스템 &nbsp;·&nbsp; 공정거래위원회 컴플라이언스 프로그램 &nbsp;·&nbsp;
-    <a href="#">이용약관</a> &nbsp;·&nbsp; <a href="#">개인정보처리방침</a>
+    <button onclick="openModal('modal-terms')">이용약관</button> &nbsp;·&nbsp;
+    <button onclick="openModal('modal-privacy')">개인정보처리방침</button>
   </footer>
 
+  <!-- 이용약관 Modal -->
+  <div class="modal-overlay" id="modal-terms" hidden>
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal('modal-terms')">✕</button>
+      <div class="modal-title">이용약관</div>
+      <div class="modal-body">
+        <h4>제1조 (서비스 목적)</h4>
+        <p>헤아림 AI 리스크 상담 시스템(이하 "서비스")은 공정거래 관련 법적 리스크를 AI 기반으로 진단하여 참고 정보를 제공하는 것을 목적으로 합니다.</p>
+        <h4>제2조 (면책 조항)</h4>
+        <p>본 서비스는 공정위 의결서, 법령 정보, 판례를 기반으로 AI가 생성한 참고 자료를 제공하며, 법률 자문을 대체하지 않습니다. 실제 법적 판단은 반드시 전문 법률가의 자문을 받으시기 바랍니다.</p>
+        <h4>제3조 (서비스 이용)</h4>
+        <p>사용자는 본 서비스를 합법적인 목적으로만 사용하여야 하며, 서비스를 통해 얻은 정보를 오용하여 발생하는 법적 책임은 사용자에게 있습니다.</p>
+        <h4>제4조 (서비스 변경 및 중단)</h4>
+        <p>운영자는 서비스의 내용을 변경하거나 중단할 수 있으며, 이로 인한 손해에 대해 책임을 지지 않습니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 개인정보처리방침 Modal -->
+  <div class="modal-overlay" id="modal-privacy" hidden>
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal('modal-privacy')">✕</button>
+      <div class="modal-title">개인정보처리방침</div>
+      <div class="modal-body">
+        <h4>수집하는 개인정보</h4>
+        <p>본 서비스는 별도의 회원가입 없이 이용 가능하며, 사용자가 입력한 질문 내용은 AI 분석 처리 후 서버에 저장되지 않습니다.</p>
+        <h4>개인정보의 이용 목적</h4>
+        <p>입력된 거래 상황 텍스트는 AI 리스크 진단 결과 생성에만 사용되며, 마케팅·광고 등 다른 목적으로 사용되지 않습니다.</p>
+        <h4>개인정보의 보유 및 이용기간</h4>
+        <p>서비스 이용 세션 종료 시 입력 데이터는 즉시 파기됩니다.</p>
+        <h4>개인정보의 제3자 제공</h4>
+        <p>본 서비스는 사용자의 개인정보를 제3자에게 제공하지 않습니다. 단, AI 분석을 위해 OpenAI API 및 국가법령정보 API를 활용합니다.</p>
+        <h4>문의</h4>
+        <p>개인정보 관련 문의는 서비스 운영팀으로 연락 주시기 바랍니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Guide Overlay -->
   <div class="guide-overlay" id="guide-overlay" hidden>
     <button class="guide-close" id="guide-close-btn" type="button">가이드 닫기</button>
-    <div class="guide-panel" aria-label="질문 화면 가이드">
+    <div class="guide-panel">
       <div class="guide-panel-title">질문 화면 가이드</div>
       <ol>
         <li>질문이 어떤 상황에 해당하는지 선택하는 영역입니다.</li>
@@ -775,27 +305,20 @@
     </div>
   </div>
 
-  <!-- ===== Script ===== -->
   <script>
-    const API_URL = "http://localhost:8000/diagnose";
+    // ── API URL 동적 설정 ──
+    const API_URL = window.location.origin + "/diagnose";
 
-    // 현재 선택된 situation_type
     let selectedSituationType = "suspected";
 
-    // Character count
     const textarea = document.getElementById('question-input');
     const charCount = document.getElementById('char-count');
+    textarea.addEventListener('input', () => { charCount.textContent = textarea.value.length + '자'; });
 
-    function updateCharCount() {
-      charCount.textContent = textarea.value.length + '자';
-    }
-    textarea.addEventListener('input', updateCharCount);
-
-    // Situation type selector
-    const situationBtns = document.querySelectorAll('.situation-btn');
-    situationBtns.forEach(btn => {
+    // Situation type
+    document.querySelectorAll('.situation-btn').forEach(btn => {
       btn.addEventListener('click', function () {
-        situationBtns.forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.situation-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         selectedSituationType = this.dataset.type;
       });
@@ -807,19 +330,10 @@
 
     submitBtn.addEventListener('click', async function () {
       const text = textarea.value.trim();
-      if (!text) {
-        textarea.focus();
-        return;
-      }
+      if (!text) { textarea.focus(); return; }
 
-      // 로딩 상태
       submitBtn.disabled = true;
-      submitBtn.innerHTML = `
-        <svg class="spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
-        </svg>
-        분석 중...
-      `;
+      submitBtn.innerHTML = `<svg class="spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182"/></svg> 분석 중...`;
       submitBtn.style.opacity = '0.8';
       errorMsg.style.display = 'none';
 
@@ -827,10 +341,7 @@
         const response = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user_query: text,
-            situation_type: selectedSituationType
-          })
+          body: JSON.stringify({ user_query: text, situation_type: selectedSituationType })
         });
 
         if (response.status === 400) {
@@ -840,59 +351,33 @@
         if (!response.ok) throw new Error('서버 오류: ' + response.status);
 
         const result = await response.json();
-
-        // 결과를 sessionStorage에 저장 후 결과 화면으로 이동
         sessionStorage.setItem('diagnoseResult', JSON.stringify(result));
-        window.location.href = '결과화면(예시).html';
+        window.location.href = '결과화면.html';
 
       } catch (err) {
         errorMsg.textContent = '오류가 발생했습니다: ' + err.message;
         errorMsg.style.display = 'block';
       } finally {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = `
-          진단 시작
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-          </svg>
-        `;
+        submitBtn.innerHTML = `진단 시작<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>`;
         submitBtn.style.opacity = '1';
       }
     });
 
-    // Keyboard shortcut
-    textarea.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        submitBtn.click();
-      }
+    textarea.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitBtn.click(); } });
+
+    // 모달
+    function openModal(id) { document.getElementById(id).hidden = false; }
+    function closeModal(id) { document.getElementById(id).hidden = true; }
+    document.querySelectorAll('.modal-overlay').forEach(el => {
+      el.addEventListener('click', e => { if (e.target === el) el.hidden = true; });
     });
 
-    // Guide overlay
+    // 가이드
     const guideOverlay = document.getElementById('guide-overlay');
-    const guideOpenBtn = document.getElementById('nav-guide');
-    const guideCloseBtn = document.getElementById('guide-close-btn');
-
-    function openGuide() {
-      if (!guideOverlay) return;
-      guideOverlay.hidden = false;
-      document.body.classList.add('guide-mode');
-    }
-
-    function closeGuide() {
-      if (!guideOverlay) return;
-      guideOverlay.hidden = true;
-      document.body.classList.remove('guide-mode');
-    }
-
-    guideOpenBtn?.addEventListener('click', openGuide);
-    guideCloseBtn?.addEventListener('click', closeGuide);
-    guideOverlay?.addEventListener('click', event => {
-      if (event.target === guideOverlay) closeGuide();
-    });
-    document.addEventListener('keydown', event => {
-      if (event.key === 'Escape') closeGuide();
-    });
+    document.getElementById('nav-guide')?.addEventListener('click', () => { guideOverlay.hidden = false; document.body.classList.add('guide-mode'); });
+    document.getElementById('guide-close-btn')?.addEventListener('click', () => { guideOverlay.hidden = true; document.body.classList.remove('guide-mode'); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { guideOverlay.hidden = true; document.body.classList.remove('guide-mode'); } });
   </script>
 </body>
 </html>
