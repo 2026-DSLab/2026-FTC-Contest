@@ -7,7 +7,7 @@
   <title>AI 리스크 상담 시스템 | 기업 컴플라이언스 진단</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     /* ===== Reset & Base ===== */
     *, *::before, *::after {
@@ -36,6 +36,14 @@
       --blue-700: #0051c7;
       --green-50: #e8faf0;
       --green-500: #1db26c;
+      --red-50: #fff0f0;
+      --red-100: #ffe0e0;
+      --red-400: #f04452;
+      --red-500: #e02d3c;
+      --red-600: #c4001d;
+      --orange-50: #fff8f0;
+      --orange-400: #f5820d;
+      --orange-500: #e06c00;
       --accent: #2b7de9;
       --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
       --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
@@ -494,6 +502,115 @@
       color: var(--gray-600);
     }
 
+    /* ===== Guide Overlay ===== */
+    .guide-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      pointer-events: auto;
+      background: transparent;
+    }
+
+    .guide-overlay[hidden] { display: none; }
+
+    .guide-close {
+      position: fixed;
+      top: 18px;
+      right: 22px;
+      z-index: 2003;
+      pointer-events: auto;
+      border: 2px solid var(--red-500);
+      background: rgba(255, 255, 255, 0.96);
+      color: var(--red-500);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 28px rgba(220, 38, 38, 0.16);
+    }
+
+    body.guide-mode [data-guide] {
+      position: relative;
+      outline: 3px solid var(--red-500);
+      outline-offset: 6px;
+      border-radius: 16px;
+    }
+
+    body.guide-mode [data-guide]::before {
+      content: "";
+      position: absolute;
+      inset: -12px;
+      border: 2px dashed rgba(239, 68, 68, 0.42);
+      border-radius: 20px;
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    body.guide-mode [data-guide]::after {
+      content: attr(data-guide-no);
+      position: absolute;
+      top: -18px;
+      left: -18px;
+      z-index: 31;
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      background: var(--white);
+      border: 2px solid var(--red-500);
+      border-radius: 50%;
+      color: var(--red-500);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 800;
+      box-shadow: 0 8px 18px rgba(220, 38, 38, 0.16);
+      pointer-events: none;
+    }
+
+    .guide-panel {
+      position: fixed;
+      top: 66px;
+      right: 22px;
+      z-index: 2003;
+      width: min(310px, calc(100vw - 44px));
+      max-height: calc(100vh - 98px);
+      overflow: auto;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.97);
+      border: 2px solid var(--red-500);
+      border-radius: 16px;
+      box-shadow: 0 18px 42px rgba(220, 38, 38, 0.16);
+      color: var(--gray-700);
+      pointer-events: auto;
+    }
+
+    .guide-panel-title {
+      margin-bottom: 10px;
+      color: var(--red-500);
+      font-size: 0.85rem;
+      font-weight: 900;
+    }
+
+    .guide-panel ol {
+      display: grid;
+      gap: 9px;
+      margin: 0;
+      padding-left: 1.25rem;
+    }
+
+    .guide-panel li {
+      font-size: 0.76rem;
+      line-height: 1.55;
+      font-weight: 700;
+      word-break: keep-all;
+    }
+
+    .guide-panel li::marker {
+      color: var(--red-500);
+      font-weight: 900;
+    }
+
     @media (max-width: 768px) {
       .header-nav { display: none; }
       .hero-title { font-size: 1.5rem; }
@@ -503,6 +620,14 @@
       .submit-row { flex-direction: column; align-items: stretch; }
       .example-hint { justify-content: center; order: 2; }
       #submit-btn { justify-content: center; order: 1; }
+      .guide-panel {
+        top: auto;
+        right: 12px;
+        bottom: 12px;
+        left: 12px;
+        width: auto;
+        max-height: 42vh;
+      }
     }
 
     @media (max-width: 480px) {
@@ -543,7 +668,7 @@
     </section>
 
     <!-- ===== Situation Selector ===== -->
-    <div class="situation-selector">
+    <div class="situation-selector" data-guide data-guide-no="1">
       <div class="situation-label">상황 유형 선택</div>
       <div class="situation-buttons">
         <button class="situation-btn" data-type="contract_before">계약 체결 전</button>
@@ -553,7 +678,7 @@
       </div>
     </div>
 
-    <div class="input-card" id="input-card">
+    <div class="input-card" id="input-card" data-guide data-guide-no="2">
       <label class="input-label" for="question-input">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
@@ -592,7 +717,7 @@
     <div id="error-msg"></div>
 
     <!-- ===== Data Sources ===== -->
-    <div class="data-sources">
+    <div class="data-sources" data-guide data-guide-no="3">
       <div class="sources-label">데이터 소스</div>
       <div class="sources-grid">
         <div class="source-card">
@@ -637,6 +762,18 @@
     © 2026 AI 리스크 상담 시스템 &nbsp;·&nbsp; 공정거래위원회 컴플라이언스 프로그램 &nbsp;·&nbsp;
     <a href="#">이용약관</a> &nbsp;·&nbsp; <a href="#">개인정보처리방침</a>
   </footer>
+
+  <div class="guide-overlay" id="guide-overlay" hidden>
+    <button class="guide-close" id="guide-close-btn" type="button">가이드 닫기</button>
+    <div class="guide-panel" aria-label="질문 화면 가이드">
+      <div class="guide-panel-title">질문 화면 가이드</div>
+      <ol>
+        <li>질문이 어떤 상황에 해당하는지 선택하는 영역입니다.</li>
+        <li>기업의 거래 상황이나 궁금한 내용을 자연어로 입력하는 영역입니다.</li>
+        <li>분석에 참고되는 의결서, QA, 법령 데이터 출처를 보여줍니다.</li>
+      </ol>
+    </div>
+  </div>
 
   <!-- ===== Script ===== -->
   <script>
@@ -729,6 +866,32 @@
         e.preventDefault();
         submitBtn.click();
       }
+    });
+
+    // Guide overlay
+    const guideOverlay = document.getElementById('guide-overlay');
+    const guideOpenBtn = document.getElementById('nav-guide');
+    const guideCloseBtn = document.getElementById('guide-close-btn');
+
+    function openGuide() {
+      if (!guideOverlay) return;
+      guideOverlay.hidden = false;
+      document.body.classList.add('guide-mode');
+    }
+
+    function closeGuide() {
+      if (!guideOverlay) return;
+      guideOverlay.hidden = true;
+      document.body.classList.remove('guide-mode');
+    }
+
+    guideOpenBtn?.addEventListener('click', openGuide);
+    guideCloseBtn?.addEventListener('click', closeGuide);
+    guideOverlay?.addEventListener('click', event => {
+      if (event.target === guideOverlay) closeGuide();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeGuide();
     });
   </script>
 </body>

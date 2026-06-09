@@ -291,6 +291,8 @@
       font-size: 0.72rem;
       font-weight: 600;
       color: var(--gray-600);
+      line-height: 1.3;
+      word-break: keep-all;
     }
 
     .agent-score {
@@ -322,6 +324,7 @@
       font-size: 0.68rem;
       color: var(--gray-400);
       line-height: 1.4;
+      word-break: keep-all;
     }
 
     /* ===== Scenario Tabs ===== */
@@ -741,6 +744,126 @@
       pointer-events: none;
     }
 
+    /* ===== Guide Overlay ===== */
+    .guide-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      pointer-events: auto;
+      background: transparent;
+    }
+
+    .guide-overlay[hidden] { display: none; }
+
+    .guide-close {
+      position: fixed;
+      top: 18px;
+      right: 22px;
+      z-index: 2003;
+      pointer-events: auto;
+      border: 2px solid var(--red-500);
+      background: rgba(255, 255, 255, 0.96);
+      color: var(--red-500);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 28px rgba(220, 38, 38, 0.16);
+    }
+
+    body.guide-mode [data-guide] {
+      position: relative;
+      outline: 3px solid var(--red-500);
+      outline-offset: 6px;
+      border-radius: 16px;
+    }
+
+    body.guide-mode [data-guide]::before {
+      content: "";
+      position: absolute;
+      inset: -12px;
+      border: 2px dashed rgba(239, 68, 68, 0.42);
+      border-radius: 20px;
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    body.guide-mode [data-guide]::after {
+      content: attr(data-guide-no);
+      position: absolute;
+      top: -18px;
+      left: -18px;
+      z-index: 31;
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      background: var(--white);
+      border: 2px solid var(--red-500);
+      border-radius: 50%;
+      color: var(--red-500);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 800;
+      box-shadow: 0 8px 18px rgba(220, 38, 38, 0.16);
+      pointer-events: none;
+    }
+
+    .guide-panel {
+      position: fixed;
+      top: 66px;
+      right: 22px;
+      z-index: 2003;
+      width: min(310px, calc(100vw - 44px));
+      max-height: calc(100vh - 98px);
+      overflow: auto;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.97);
+      border: 2px solid var(--red-500);
+      border-radius: 16px;
+      box-shadow: 0 18px 42px rgba(220, 38, 38, 0.16);
+      color: var(--gray-700);
+      pointer-events: auto;
+    }
+
+    .guide-panel-title {
+      margin-bottom: 10px;
+      color: var(--red-500);
+      font-size: 0.85rem;
+      font-weight: 900;
+    }
+
+    .guide-panel ol {
+      display: grid;
+      gap: 9px;
+      margin: 0;
+      padding-left: 1.25rem;
+    }
+
+    .guide-panel li {
+      font-size: 0.76rem;
+      line-height: 1.55;
+      font-weight: 700;
+      word-break: keep-all;
+    }
+
+    .guide-panel li::marker {
+      color: var(--red-500);
+      font-weight: 900;
+    }
+
+    @media (max-width: 768px) {
+      .guide-panel {
+        top: auto;
+        right: 12px;
+        bottom: 12px;
+        left: 12px;
+        width: auto;
+        max-height: 42vh;
+      }
+    }
+
     @media print {
       header, .report-toolbar, footer, .user-query { display: none !important; }
       body { background: white; }
@@ -815,7 +938,7 @@
       <div class="header-nav">
         <a class="nav-pill active" href="index.html">상담</a>
         <button class="nav-pill">이력</button>
-        <button class="nav-pill">가이드</button>
+        <button class="nav-pill" id="guide-open-btn" type="button">가이드</button>
       </div>
     </div>
   </header>
@@ -825,23 +948,23 @@
     <article class="report">
 
       <!-- User query -->
-      <div class="user-query">
+      <div class="user-query" data-guide data-guide-no="1">
         <div class="user-avatar">U</div>
         <div style="flex:1;">
-          <div class="user-query-text">자사상품(직매입·PB상품)을 검색 결과 상단에 올리면 문제가 되나요?</div>
+          <div class="user-query-text" id="result-query">자사상품(직매입·PB상품)을 검색 결과 상단에 올리면 문제가 되나요?</div>
           <div class="query-context">
             <span class="ctx-chip persona">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               기업 컴플라이언스 담당자
             </span>
-            <span class="ctx-chip qtype">시장영향</span>
+            <span class="ctx-chip qtype" id="result-situation">시장영향</span>
             <span class="ctx-chip level">Level 4 · 고급</span>
           </div>
         </div>
       </div>
 
       <!-- AI marker -->
-      <div class="ai-marker">
+      <div class="ai-marker" data-guide data-guide-no="2">
         <div class="ai-avatar">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round"
@@ -853,7 +976,7 @@
       </div>
 
       <!-- Agent Confidence Panel -->
-      <div class="agent-panel animate-in" style="animation-delay:0.05s;">
+      <div class="agent-panel animate-in" data-guide data-guide-no="3" style="animation-delay:0.05s;">
         <div class="agent-card">
           <div class="agent-header">
             <span class="agent-name">⚖️ 법령 해석</span>
@@ -900,7 +1023,7 @@
       <div class="report-body">
 
         <!-- Risk Display -->
-        <div class="risk-display animate-in" style="animation-delay: 0.1s;">
+        <div class="risk-display animate-in" data-guide data-guide-no="4" style="animation-delay: 0.1s;">
           <div class="risk-weather">🌧️</div>
           <div class="risk-score-line">
             <span class="risk-big-number" id="risk-score">90</span>
@@ -920,7 +1043,7 @@
         <div class="divider"></div>
 
         <div class="animate-in" style="animation-delay: 0.2s;">
-          <p>입력하신 상황을 분석한 결과, <strong style="color: var(--red-500);">법적 리스크가 매우 높은 것</strong>으로 진단됩니다. 온라인 쇼핑몰 사업자가 검색 알고리즘을 인위적으로 조작하여 자사상품(직매입·PB상품)을 검색순위 상단에 고정 노출하는 행위는 「독점규제 및 공정거래에 관한 법률」(이하 '공정거래법') 제45조 제1항 제4호의 <strong>위계에 의한 부당한 고객유인행위</strong>에 해당할 가능성이 매우 높습니다. 2024년 공정위가 쿠팡㈜ 및 씨피엘비㈜에 1,628억 원의 과징금을 부과한 사례가 직접적인 선례로 작용합니다.</p>
+          <p id="result-summary">입력하신 상황을 분석한 결과, <strong style="color: var(--red-500);">법적 리스크가 매우 높은 것</strong>으로 진단됩니다. 온라인 쇼핑몰 사업자가 검색 알고리즘을 인위적으로 조작하여 자사상품(직매입·PB상품)을 검색순위 상단에 고정 노출하는 행위는 「독점규제 및 공정거래에 관한 법률」(이하 '공정거래법') 제45조 제1항 제4호의 <strong>위계에 의한 부당한 고객유인행위</strong>에 해당할 가능성이 매우 높습니다. 2024년 공정위가 쿠팡㈜ 및 씨피엘비㈜에 1,628억 원의 과징금을 부과한 사례가 직접적인 선례로 작용합니다.</p>
         </div>
 
         <div class="divider"></div>
@@ -928,7 +1051,7 @@
         <div class="grid-2x2 animate-in" style="animation-delay: 0.3s;">
 
           <!-- 근거 -->
-          <div class="grid-cell">
+          <div class="grid-cell" id="result-legal-basis" data-guide data-guide-no="5">
             <div class="section-title">관련 법령 및 의결서 근거</div>
 
             <h3>1. 공정위 의결 제2024-284호 <span class="tag info">핵심 선례</span></h3>
@@ -957,11 +1080,11 @@
           </div>
 
           <!-- 유사사례 -->
-          <div class="grid-cell">
+          <div class="grid-cell" data-guide data-guide-no="6">
             <div class="section-title">유사 사례</div>
             <p>공정위 의결서 DB에서 입력 상황과 유사한 사례를 검색한 결과입니다.</p>
 
-            <ul class="case-list">
+            <ul class="case-list" id="result-similar-cases">
               <li>
                 <strong>쿠팡㈜·씨피엘비㈜ — 자사 직매입·PB상품 검색순위 상단 고정</strong><br>
                 자사 직매입 및 PB상품에 '부스팅(Boosting)' 가중치를 부여해 검색 상위에 인위적으로 고정 노출하고, 임직원을 동원한 허위 구매후기로 별점을 조작한 사례. 시정명령 및 과징금 1,628억 원 부과.
@@ -996,7 +1119,7 @@
           <div class="divider" style="grid-column: 1 / -1; margin: 0;"></div>
 
           <!-- 법리 해석 -->
-          <div class="grid-cell">
+          <div class="grid-cell" id="result-legal-interpretation">
             <div class="section-title">법리 해석</div>
             <p>본 사안의 핵심 쟁점은 <strong>소비자 오인 가능성과 위계성</strong>입니다. 검색순위는 소비자가 상품의 품질·인기를 추론하는 핵심 신호입니다. 공정위는 검색 알고리즘에 '부스팅' 등의 방법으로 자사상품의 순위를 인위적으로 상향 조정할 경우, 해당 상품이 실제 품질 경쟁력에 기반하여 상위에 위치한 것으로 소비자가 오인하게 된다고 보아 위계성을 인정합니다.</p>
             <blockquote>
@@ -1011,7 +1134,7 @@
             <div class="section-title">컴플라이언스 체크리스트</div>
             <p>자사상품 노출 정책 운용 전, 아래 항목을 반드시 점검하시기 바랍니다.</p>
 
-            <ul class="check-list">
+            <ul class="check-list" id="result-checklist" data-guide data-guide-no="7">
               <li>
                 <span class="check-emoji">🔴</span>
                 <div class="check-content">
@@ -1063,21 +1186,21 @@
           </div>
 
           <div id="pane-basic" class="scenario-pane active">
-            <div class="scenario-context-box">
+            <div class="scenario-context-box" id="result-scenario-basic-context">
               <strong>상황 설정</strong><br>
               준법 담당자가 검색·추천 알고리즘 개편안을 검토하는 과정에서, 자사 직매입·PB상품에 부여된 <strong>가중치 로직(부스팅)</strong>, 특정 브랜드 우선노출 정책, 프로모션 적용 기준이 경쟁 입점업체에 구조적으로 불리하게 작동하는지 점검한다.
             </div>
-            <p style="font-size:0.85rem; color:var(--gray-600); line-height:1.75;">
+            <p id="result-scenario-basic-content" style="font-size:0.85rem; color:var(--gray-600); line-height:1.75;">
               이 시나리오에서 핵심 점검 대상은 알고리즘 설계 문서와 내부 승인 기록입니다. <strong>매출 증대 목적이 명시된 승인 문서</strong>가 존재할 경우 공정위 조사 시 위법 의도의 직접 증거가 될 수 있습니다. 검색 품질 개선·신상품 콜드스타트·광고 노출이 혼합된 경우에도, 자사상품에만 별도 예외를 두는 로직이 있는지 분리하여 확인해야 합니다.
             </p>
           </div>
 
           <div id="pane-extra" class="scenario-pane">
-            <div class="scenario-context-box">
+            <div class="scenario-context-box" id="result-scenario-extra-context">
               <strong>상황 설정</strong><br>
               검색품질 개선, 신상품 콜드스타트 처리, 광고상품 노출 정책이 자사상품 우대 정책과 <strong>혼합 운용</strong>되는 경우 — 각 로직을 분리 식별하여 자사상품에만 예외가 적용되는지 판별한다.
             </div>
-            <p style="font-size:0.85rem; color:var(--gray-600); line-height:1.75;">
+            <p id="result-scenario-extra-content" style="font-size:0.85rem; color:var(--gray-600); line-height:1.75;">
               추가적으로 점검해야 할 사항: ① 이용자에게 자사상품 우선 노출 기준이 충분히 고지되는지, ② 입점업체 영향 평가 체크리스트가 별도로 운용되는지, ③ 알고리즘 변경 시 사전 컴플라이언스 심사 프로세스가 존재하는지. 이 세 가지 내부통제 요소의 존재 여부가 과징금 감경 심리에서 중요하게 다뤄질 수 있습니다.
             </p>
           </div>
@@ -1086,7 +1209,7 @@
         <div class="divider"></div>
 
         <div class="animate-in" style="animation-delay: 0.6s;">
-          <p style="font-size: 0.8rem; color: var(--gray-400); line-height: 1.7;">
+          <p id="result-caveats" style="font-size: 0.8rem; color: var(--gray-400); line-height: 1.7;">
             ⚠️ 본 진단 결과는 AI가 공정위 의결서, 컴플라이언스 QA DB, 법령 API를 기반으로 생성한 참고 자료이며, 법률 자문을 대체하지 않습니다. 실제 법적 판단은 전문 법률가의 자문을 받으시기 바랍니다.
           </p>
         </div>
@@ -1094,7 +1217,7 @@
       </div>
 
       <!-- Toolbar -->
-      <div class="report-toolbar">
+      <div class="report-toolbar" data-guide data-guide-no="8">
         <div class="toolbar-left">
           <button class="tool-btn" title="복사">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -1115,7 +1238,7 @@
             </svg>
           </button>
         </div>
-        <a class="new-consult-btn" href="index.html">
+        <a class="new-consult-btn" href="질문화면.html">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
@@ -1133,6 +1256,23 @@
     </article>
   </div>
 
+  <div class="guide-overlay" id="guide-overlay" hidden>
+    <button class="guide-close" id="guide-close-btn" type="button">가이드 닫기</button>
+    <div class="guide-panel" aria-label="결과 화면 가이드">
+      <div class="guide-panel-title">결과 화면 가이드</div>
+      <ol>
+        <li>사용자가 입력한 질문과 선택한 상황 유형입니다.</li>
+        <li>이 아래부터 AI가 생성한 리스크 진단 보고서입니다.</li>
+        <li>법령·의결서·판례·사례 에이전트별 신뢰도를 한눈에 보여줍니다.</li>
+        <li>최종 위험 점수와 위험 단계를 요약한 핵심 결과입니다.</li>
+        <li>판단에 쓰인 법령, 의결서, 판례 근거가 들어가는 영역입니다.</li>
+        <li>입력 상황과 비슷한 실제 사례를 보여주는 영역입니다.</li>
+        <li>실무자가 바로 점검할 수 있는 조치 항목입니다.</li>
+        <li>복사·저장·새 상담 등 보고서 후속 작업 버튼입니다.</li>
+      </ol>
+    </div>
+  </div>
+
   <footer>
     © 2026 AI 리스크 상담 시스템 &nbsp;·&nbsp; 공정거래위원회 컴플라이언스 프로그램 &nbsp;·&nbsp;
     <a href="#">이용약관</a> &nbsp;·&nbsp; <a href="#">개인정보처리방침</a>
@@ -1140,7 +1280,297 @@
 
   <script>
     const scoreEl = document.getElementById('risk-score');
-    const target = 90;
+    let target = 90;
+    let bars = [
+      { bar: 'bar-law',    width: 96 },
+      { bar: 'bar-ruling', width: 98 },
+      { bar: 'bar-prec',   width: 88 },
+      { bar: 'bar-case',   width: 85 },
+    ];
+
+    const AGENT_SLOTS = [
+      { type: 'law',        score: 'score-law',    bar: 'bar-law',    icon: '⚖️' },
+      { type: 'resolution', score: 'score-ruling', bar: 'bar-ruling', icon: '📋' },
+      { type: 'precedent',  score: 'score-prec',   bar: 'bar-prec',   icon: '🔍' },
+      { type: 'case',       score: 'score-case',   bar: 'bar-case',   icon: '📁' },
+    ];
+
+    function getStoredResult() {
+      try {
+        const raw = sessionStorage.getItem('diagnoseResult');
+        return raw ? JSON.parse(raw) : null;
+      } catch (err) {
+        console.warn('diagnoseResult 파싱 실패:', err);
+        return null;
+      }
+    }
+
+    function escapeHTML(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function cleanText(value) {
+      return String(value ?? '')
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/^#{1,6}\s+/gm, '')
+        .trim();
+    }
+
+    function textOrNull(value) {
+      const text = cleanText(value);
+      return text.length ? text : null;
+    }
+
+    function normalizeAgentName(value, fallback) {
+      const raw = textOrNull(value) || textOrNull(fallback);
+      if (!raw) return null;
+
+      const withoutSuffix = raw.replace(/\s*에이전트\s*$/, '').trim();
+      const firstTextIndex = withoutSuffix.search(/[A-Za-z0-9가-힣]/);
+      return (firstTextIndex > 0 ? withoutSuffix.slice(firstTextIndex) : withoutSuffix).trim();
+    }
+
+    function clampScore(value) {
+      const number = Number(value);
+      if (!Number.isFinite(number)) return null;
+      return Math.max(0, Math.min(100, Math.round(number)));
+    }
+
+    function validTag(type) {
+      return ['danger', 'info', 'warn', 'law'].includes(type) ? type : 'info';
+    }
+
+    function paragraphsHTML(value, limit = 3) {
+      const text = textOrNull(value);
+      if (!text) return '';
+      return text
+        .split(/\r?\n\s*\r?\n/)
+        .map(part => part.trim())
+        .filter(Boolean)
+        .slice(0, limit)
+        .map(part => `<p>${escapeHTML(part).replace(/\n/g, '<br>')}</p>`)
+        .join('');
+    }
+
+    function scoreToWeather(score) {
+      if (score < 40) return '☀️';
+      if (score < 70) return '⛅';
+      if (score < 90) return '🌧️';
+      return '⛈️';
+    }
+
+    function riskBadgeText(level, score) {
+      const compact = String(level ?? '').replace(/\s/g, '');
+      if (compact.includes('낮')) return '저위험';
+      if (compact.includes('보통') || compact.includes('중')) return '중위험';
+      if (compact.includes('높')) return '고위험';
+      if (score < 40) return '저위험';
+      if (score < 70) return '중위험';
+      return '고위험';
+    }
+
+    function setText(selector, value) {
+      const text = textOrNull(value);
+      if (!text) return;
+      const el = document.querySelector(selector);
+      if (el) el.textContent = text;
+    }
+
+    function applyRisk(result) {
+      const riskScore = clampScore(result.risk_score ?? result.overall_confidence);
+      if (riskScore !== null) target = riskScore;
+
+      const weatherEl = document.querySelector('.risk-weather');
+      if (weatherEl) weatherEl.textContent = textOrNull(result.risk_weather) || scoreToWeather(target);
+
+      const badgeEl = document.querySelector('.risk-badge');
+      if (badgeEl) {
+        badgeEl.innerHTML = `<span class="risk-badge-dot"></span>${escapeHTML(riskBadgeText(result.risk_level, target))}`;
+      }
+
+      const legendItems = document.querySelectorAll('.risk-legend span');
+      legendItems.forEach(item => item.classList.remove('active-legend'));
+      const activeIndex = target < 40 ? 0 : target < 70 ? 1 : 2;
+      legendItems[activeIndex]?.classList.add('active-legend');
+    }
+
+    function applyAgents(result) {
+      const reports = Array.isArray(result.agent_reports) ? result.agent_reports : [];
+      if (!reports.length) return;
+
+      const byType = new Map();
+      reports.forEach(report => {
+        if (report?.agent_type) byType.set(report.agent_type, report);
+      });
+
+      bars = AGENT_SLOTS.map((slot, index) => {
+        const report = byType.get(slot.type) || reports[index];
+        const score = clampScore(report?.confidence_score);
+        if (!report) return { bar: slot.bar, width: 0 };
+
+        const scoreEl = document.getElementById(slot.score);
+        if (scoreEl && score !== null) scoreEl.textContent = String(score);
+
+        const card = document.getElementById(slot.score)?.closest('.agent-card');
+        const nameEl = card?.querySelector('.agent-name');
+        if (nameEl) {
+          const name = normalizeAgentName(report.agent_name, nameEl.textContent) || nameEl.textContent.trim();
+          nameEl.textContent = `${slot.icon} ${name}`;
+        }
+
+        const sourceEl = card?.querySelector('.agent-source');
+        const source =
+          textOrNull(report.source_description) ||
+          (Array.isArray(report.key_findings) ? report.key_findings.map(textOrNull).filter(Boolean).slice(0, 2).join('\n') : null) ||
+          textOrNull(report.limitations);
+
+        if (sourceEl && source) {
+          sourceEl.innerHTML = escapeHTML(source).replace(/\n/g, '<br>');
+        }
+
+        return { bar: slot.bar, width: score ?? 0 };
+      });
+    }
+
+    function applyLegalBasis(result) {
+      const items = Array.isArray(result.legal_basis) ? result.legal_basis.slice(0, 3) : [];
+      const cell = document.getElementById('result-legal-basis');
+      if (!items.length || !cell) return;
+
+      const titleHTML = cell.querySelector('.section-title')?.outerHTML || '<div class="section-title">관련 법령 및 의결서 근거</div>';
+      cell.innerHTML = titleHTML + items.map((item, index) => {
+        const pages = Array.isArray(item.page_refs)
+          ? item.page_refs.map(page => `<span class="cite-page">📄 ${escapeHTML(page)}</span>`).join('')
+          : '';
+        return `
+          <h3>${index + 1}. ${escapeHTML(item.title)} <span class="tag ${validTag(item.tag_type)}">${escapeHTML(item.tag_label)}</span></h3>
+          <blockquote>
+            "${escapeHTML(cleanText(item.quote))}"
+            <cite>${escapeHTML(item.cite)}${pages}</cite>
+          </blockquote>
+        `;
+      }).join('');
+    }
+
+    function applySimilarCases(result) {
+      const items = Array.isArray(result.similar_cases) ? result.similar_cases.slice(0, 3) : [];
+      const list = document.getElementById('result-similar-cases');
+      if (!items.length || !list) return;
+
+      list.innerHTML = items.map(item => {
+        const tags = Array.isArray(item.tags)
+          ? item.tags.slice(0, 2).map(tag => `<span class="tag ${validTag(tag.type)}">${escapeHTML(tag.label)}</span>`).join('')
+          : '';
+        const similarity = clampScore(item.similarity);
+        return `
+          <li>
+            <strong>${escapeHTML(item.title)}</strong><br>
+            ${escapeHTML(cleanText(item.description))}
+            <div class="case-meta">
+              ${tags}
+              ${similarity !== null ? `<span class="similarity">유사도 ${similarity}%</span>` : ''}
+            </div>
+          </li>
+        `;
+      }).join('');
+    }
+
+    function applyLegalInterpretation(result) {
+      const content = textOrNull(result.legal_interpretation) || textOrNull(result.synthesis);
+      const cell = document.getElementById('result-legal-interpretation');
+      if (!content || !cell) return;
+
+      const titleHTML = cell.querySelector('.section-title')?.outerHTML || '<div class="section-title">법리 해석</div>';
+      cell.innerHTML = titleHTML + paragraphsHTML(content, 3);
+    }
+
+    function applyChecklist(result) {
+      const list = document.getElementById('result-checklist');
+      if (!list) return;
+
+      let items = Array.isArray(result.checklist) ? result.checklist.slice(0, 5) : [];
+      if (!items.length && Array.isArray(result.recommendations)) {
+        items = result.recommendations.slice(0, 5).map((item, index) => ({
+          emoji: index < 3 ? '🔴' : '🟡',
+          title: `권고사항 ${index + 1}`,
+          priority: index < 3 ? 'high' : 'medium',
+          priority_label: index < 3 ? '필수' : '권장',
+          description: item,
+        }));
+      }
+      if (!items.length) return;
+
+      list.innerHTML = items.map(item => {
+        const priority = item.priority === 'high' ? 'high' : 'medium';
+        const label = textOrNull(item.priority_label) || (priority === 'high' ? '필수' : '권장');
+        return `
+          <li>
+            <span class="check-emoji">${escapeHTML(item.emoji || (priority === 'high' ? '🔴' : '🟡'))}</span>
+            <div class="check-content">
+              <strong>${escapeHTML(item.title)} <span class="check-priority-inline ${priority}">${escapeHTML(label)}</span></strong>
+              <p>${escapeHTML(cleanText(item.description))}</p>
+            </div>
+          </li>
+        `;
+      }).join('');
+    }
+
+    function applyScenarios(result) {
+      const scenarios = result.scenarios || {};
+      const pairs = [
+        ['basic', 'result-scenario-basic-context', 'result-scenario-basic-content'],
+        ['extra', 'result-scenario-extra-context', 'result-scenario-extra-content'],
+      ];
+
+      pairs.forEach(([key, contextId, contentId]) => {
+        const scenario = scenarios[key];
+        if (!scenario) return;
+
+        const context = textOrNull(scenario.context);
+        const content = textOrNull(scenario.content);
+        const contextEl = document.getElementById(contextId);
+        const contentEl = document.getElementById(contentId);
+
+        if (contextEl && context) {
+          contextEl.innerHTML = `<strong>상황 설정</strong><br>${escapeHTML(context).replace(/\n/g, '<br>')}`;
+        }
+        if (contentEl && content) {
+          contentEl.textContent = content;
+        }
+      });
+    }
+
+    function applyCaveats(result) {
+      const caveats = textOrNull(result.caveats);
+      const el = document.getElementById('result-caveats');
+      if (el && caveats) el.textContent = `⚠️ ${caveats}`;
+    }
+
+    function applyResult(result) {
+      setText('#result-query', result.original_query || result.rewritten_query);
+      setText('#result-situation', result.situation_type);
+
+      const summary = textOrNull(result.summary) || textOrNull(result.synthesis)?.split(/\r?\n\s*\r?\n/)[0];
+      if (summary) setText('#result-summary', summary);
+
+      applyRisk(result);
+      applyAgents(result);
+      applyLegalBasis(result);
+      applySimilarCases(result);
+      applyLegalInterpretation(result);
+      applyChecklist(result);
+      applyScenarios(result);
+      applyCaveats(result);
+    }
+
+    const storedResult = getStoredResult();
+    if (storedResult) applyResult(storedResult);
+
     const duration = 1200;
     const startTime = performance.now();
 
@@ -1156,18 +1586,38 @@
     requestAnimationFrame(animateScore);
 
     // Agent confidence bar animation
-    const bars = [
-      { bar: 'bar-law',    width: 96 },
-      { bar: 'bar-ruling', width: 98 },
-      { bar: 'bar-prec',   width: 88 },
-      { bar: 'bar-case',   width: 85 },
-    ];
     setTimeout(() => {
       bars.forEach(({ bar, width }) => {
         const el = document.getElementById(bar);
         if (el) el.style.width = width + '%';
       });
     }, 400);
+
+    // Guide overlay
+    const guideOverlay = document.getElementById('guide-overlay');
+    const guideOpenBtn = document.getElementById('guide-open-btn');
+    const guideCloseBtn = document.getElementById('guide-close-btn');
+
+    function openGuide() {
+      if (!guideOverlay) return;
+      guideOverlay.hidden = false;
+      document.body.classList.add('guide-mode');
+    }
+
+    function closeGuide() {
+      if (!guideOverlay) return;
+      guideOverlay.hidden = true;
+      document.body.classList.remove('guide-mode');
+    }
+
+    guideOpenBtn?.addEventListener('click', openGuide);
+    guideCloseBtn?.addEventListener('click', closeGuide);
+    guideOverlay?.addEventListener('click', event => {
+      if (event.target === guideOverlay) closeGuide();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeGuide();
+    });
 
     // Scenario tab switching
     function switchTab(btn, paneId) {
