@@ -270,6 +270,57 @@ class LegalAnalysisPipeline:
 
         return final, pipeline_trace
 
+    async def run_stream(
+        self,
+        user_query: str,
+        situation_type: str | SituationType = SituationType.SUSPECTED,
+    ):
+        """SSE (Server-Sent Events)를 위한 비동기 상태 스트리밍 파이프라인"""
+        import json
+
+        if isinstance(situation_type, SituationType):
+            situation_type_key = situation_type.to_rag_key()
+            situation_type_label = situation_type.value
+        else:
+            situation_type_key = situation_type
+            situation_type_label = situation_type
+
+        yield json.dumps({"status": "processing", "step": 1, "message": "1/4 쿼리 재작성 중..."}) + "\n"
+
+        processed = await self.rag_pipeline.process_query_only(user_query)
+        rewritten = processed["rewritten_query"]
+        law_q = processed.get("mcp_law_query") or "독점규제 공정거래"
+        prec_q = processed.get("mcp_prec_query") or rewritten
+
+        yield json.dumps({"status": "processing", "step": 2, "message": "2/4 RAG 검색 + MCP 법령·판례 병렬 검색 중..."}) + "\n"
+
+        loop = asyncio.get_running_loop()
+        rag_task = asyncio.create_task(self.rag_pipeline.run_search_only(user_query, situation_type_key, processed))
+        mcp_task = loop.run_in_executor(None, self.mcp_retriever.retrieve_sync, law_q, prec_q)
+        
+        rag_output, mcp_evidence = await asyncio.gather(rag_task, mcp_task)
+
+        rag_evidence = _rag_to_evidence(rag_output)
+        combined = _merge_evidence(rag_evidence, mcp_evidence)
+
+        yield json.dumps({"status": "processing", "step": 3, "message": "3/4 전문 AI 에이전트(법령/의결서/판례/사례) 병렬 분석 중..."}) + "\n"
+
+        reports = await loop.run_in_executor(
+            None,
+            self.step3_analyze,
+            user_query, rag_output.rewritten_query, combined
+        )
+
+        yield json.dumps({"status": "processing", "step": 4, "message": "4/4 최종 종합 법률 보고서 생성 중..."}) + "\n"
+
+        final = await loop.run_in_executor(
+            None,
+            self.step4_synthesize,
+            user_query, rag_output.rewritten_query, situation_type_label, reports
+        )
+
+        yield json.dumps({"status": "complete", "data": final.model_dump()}) + "\n"
+
     # ── 내부 헬퍼 ─────────────────────────────────────────
 
     def _run_agents_parallel(
