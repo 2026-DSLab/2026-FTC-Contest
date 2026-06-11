@@ -1197,7 +1197,7 @@
           <!-- 체크리스트 -->
           <div class="grid-cell">
             <div class="section-title">컴플라이언스 체크리스트</div>
-            <p>자사상품 노출 정책 운용 전, 아래 항목을 반드시 점검하시기 바랍니다.</p>
+            <p>아래 항목을 반드시 점검하시기 바랍니다.</p>
 
             <ul class="check-list" id="result-checklist" data-guide data-guide-no="7">
               <li>
@@ -1284,19 +1284,13 @@
       <!-- Toolbar -->
       <div class="report-toolbar" data-guide data-guide-no="8">
         <div class="toolbar-left">
-          <button class="tool-btn" title="복사">
+          <button class="tool-btn" title="복사" onclick="copyReport()">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
             </svg>
           </button>
-          <button class="tool-btn" title="다운로드">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-            </svg>
-          </button>
-          <button class="tool-btn" title="공유">
+          <button class="tool-btn" title="공유" onclick="shareReport()">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
@@ -1771,6 +1765,75 @@
           document.getElementById('spin-style')?.remove();
         }, 1000);
       }, 300);
+    }
+
+    // ── 토스트 알림 표시 ──
+    function showToast(message) {
+      let toast = document.getElementById('toast-notification');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast-notification';
+        toast.style.cssText = `
+          position: fixed;
+          bottom: 30px;
+          left: 50%;
+          transform: translateX(-50%) translateY(20px);
+          background: rgba(25, 31, 40, 0.95);
+          color: #fff;
+          padding: 12px 24px;
+          border-radius: 12px;
+          font-size: 0.82rem;
+          font-weight: 500;
+          z-index: 9999;
+          opacity: 0;
+          transition: opacity 0.3s, transform 0.3s;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+          pointer-events: none;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        `;
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = `<span>✨</span> ${message}`;
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateX(-50%) translateY(0)';
+      
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(20px)';
+      }, 2000);
+    }
+
+    // ── 진단 결과 텍스트 클립보드 복사 ──
+    function copyReport() {
+      const result = getStoredResult();
+      if (!result) return;
+      
+      const summaryText = result.summary || result.synthesis || "";
+      const text = `[헤아림 AI 리스크 진단 보고서]\n\n` +
+                   `■ 질문: ${result.original_query}\n` +
+                   `■ 상황 유형: ${result.situation_type}\n` +
+                   `■ 진단 결과: ${result.risk_level} (${result.risk_score || result.overall_confidence || 0}점)\n\n` +
+                   `■ 요약 분석:\n${summaryText}\n\n` +
+                   `* 상세 보고서는 웹 또는 PDF 출력을 확인하세요.\n` +
+                   `* 본 분석은 참고자료이며 법적 효력을 대체할 수 없습니다.`;
+      
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("진단 결과 요약이 클립보드에 복사되었습니다.");
+      }).catch(err => {
+        console.error("복사 실패:", err);
+      });
+    }
+
+    // ── 공유 링크 복사 ──
+    function shareReport() {
+      const url = window.location.href;
+      navigator.clipboard.writeText(url).then(() => {
+        showToast("공유 링크가 클립보드에 복사되었습니다.");
+      }).catch(err => {
+        console.error("공유 실패:", err);
+      });
     }
   </script>
 
