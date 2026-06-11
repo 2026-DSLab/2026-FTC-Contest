@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from agent_pipeline import LegalAnalysisPipeline
 from models import SituationType
@@ -39,7 +39,7 @@ def diagnose(req: DiagnoseRequest):
         raise HTTPException(status_code=422, detail=f"situation_type은 다음 중 하나: {valid}")
     
     try:
-        result = pipeline.run(req.user_query, situation_type=situation)
+        result = pipeline.run(req.user_query, situation_type=situation, verbose=True)
         pipeline_trace = {}
     except IrrelevantQueryError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -54,3 +54,24 @@ def diagnose(req: DiagnoseRequest):
     save_path.write_text(json.dumps(save_data, ensure_ascii=False, indent=2), encoding="utf-8")
 
     return JSONResponse(content=data)
+
+@router.get("/diagnose_stream")
+async def diagnose_stream(query: str, situation: str):
+    situation_str = SITUATION_MAP.get(situation, situation)
+    
+    try:
+        situation_type_obj = SituationType(situation_str)
+    except ValueError:
+        valid = list(SITUATION_MAP.keys())
+        raise HTTPException(status_code=422, detail=f"situation은 다음 중 하나: {valid}")
+
+    async def event_generator():
+        try:
+            async for chunk in pipeline.run_stream(query, situation_type=situation_type_obj):
+                yield f"data: {chunk}\n\n"
+        except IrrelevantQueryError as e:
+            yield f"data: {json.dumps({'status': 'error', 'message': str(e)})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'status': 'error', 'message': f'서버 오류: {str(e)}'})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")

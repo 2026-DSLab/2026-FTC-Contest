@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -168,47 +169,87 @@ class LegalAnalysisPipeline:
             situation_type_key = situation_type
             situation_type_label = situation_type
 
-        if verbose:
-            print(f"[1/4] RAG 파이프라인 실행 중 (상황유형: {situation_type_label})...")
-        rag_output = self.step1_rag(user_query, situation_type_key)
-        if verbose:
-            print(f"  → 재작성: {rag_output.rewritten_query}")
-            print(
-                f"  → 하이브리드 검색 {len(rag_output.hybrid_search_raw)}건 → "
-                f"리랭킹 후 {len(rag_output.reranked_raw)}건 → "
-                f"LLM 필터 후 {len(rag_output.filtered_raw)}건 / "
-                f"시나리오 {len(rag_output.scenario_docs)}건 수집"
-            )
+        t_total = time.time()
 
         if verbose:
-            print(f"[2/4] MCP 법령·판례 검색 중...")
-        mcp_evidence = self.step2_mcp(
-            rag_output.mcp_law_query or "독점규제 공정거래",
-            rag_output.mcp_prec_query or rag_output.rewritten_query,
+            print(f"\n{'='*60}")
+            print(f"[1/4] 쿼리 재작성 중 (상황유형: {situation_type_label})...")
+        t0 = time.time()
+
+        # 1단계: 쿼리 재작성 (RAG, MCP 모두 이 결과가 필요)
+        processed = asyncio.run(
+            self.rag_pipeline.process_query_only(user_query)
         )
+        rewritten = processed["rewritten_query"]
+        law_q = processed.get("mcp_law_query") or "독점규제 공정거래"
+        prec_q = processed.get("mcp_prec_query") or rewritten
+
+        if verbose:
+            print(f"  → 재작성: {rewritten}")
+            print(f"  ⏱ 쿼리 재작성 소요: {time.time() - t0:.1f}초")
+            print(f"[2/4] RAG 검색 + MCP 법령·판례 검색 병렬 실행 중...")
+        t1 = time.time()
+
+        # 2단계: RAG 검색 본체 + MCP를 진정한 병렬로 실행
+        def _run_rag_search():
+            _t = time.time()
+            result = asyncio.run(
+                self.rag_pipeline.run_search_only(user_query, situation_type_key, processed)
+            )
+            if verbose:
+                print(f"    [RAG 검색 완료] ⏱ {time.time() - _t:.1f}초")
+            return result
+
+        def _run_mcp():
+            _t = time.time()
+            result = self.mcp_retriever.retrieve_sync(law_q, prec_q)
+            if verbose:
+                print(f"    [MCP 검색 완료] ⏱ {time.time() - _t:.1f}초")
+            return result
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            rag_future = executor.submit(_run_rag_search)
+            mcp_future = executor.submit(_run_mcp)
+            rag_output = rag_future.result()
+            mcp_evidence = mcp_future.result()
+
         if verbose:
             print(
-                f"  → 법령 {len(mcp_evidence.laws)}건 / 판례 {len(mcp_evidence.precedents)}건 / "
-                f"공정위 결정문 {len(mcp_evidence.ftc_decisions)}건 수집"
+                f"  → RAG: 하이브리드 {len(rag_output.hybrid_search_raw)}건 → "
+                f"리랭킹 {len(rag_output.reranked_raw)}건 → "
+                f"필터 {len(rag_output.filtered_raw)}건 / "
+                f"시나리오 {len(rag_output.scenario_docs)}건"
             )
+            print(
+                f"  → MCP: 법령 {len(mcp_evidence.laws)}건 / 판례 {len(mcp_evidence.precedents)}건 / "
+                f"결정문 {len(mcp_evidence.ftc_decisions)}건"
+            )
+            print(f"  ⏱ RAG+MCP 병렬 소요: {time.time() - t1:.1f}초")
 
         rag_evidence = _rag_to_evidence(rag_output)
         combined = _merge_evidence(rag_evidence, mcp_evidence)
 
         if verbose:
             print(f"[3/4] 다면적 법리 해석 에이전트 실행 중{'(병렬)' if self.parallel_agents else '(순차)'}...")
+        t2 = time.time()
         reports = self.step3_analyze(user_query, rag_output.rewritten_query, combined)
         if verbose:
             for r in reports:
                 print(f"  → [{r.agent_name}] 신뢰도: {r.confidence_score}/100")
+            print(f"  ⏱ 4개 에이전트 병렬 분석 소요: {time.time() - t2:.1f}초")
 
         if verbose:
             print(f"[4/4] 최종 종합 보고서 생성 중...")
+        t3 = time.time()
         final = self.step4_synthesize(
             user_query, rag_output.rewritten_query, situation_type_label, reports
         )
         if verbose:
             print(f"  → 종합 신뢰도: {final.overall_confidence}/100 | 리스크: {final.risk_level}")
+            print(f"  ⏱ 종합 보고서 생성 소요: {time.time() - t3:.1f}초")
+            print(f"{'='*60}")
+            print(f"⏱ 전체 파이프라인 소요: {time.time() - t_total:.1f}초")
+            print(f"{'='*60}\n")
 
         pipeline_trace = {
             "rag": {
@@ -229,6 +270,57 @@ class LegalAnalysisPipeline:
 
         return final, pipeline_trace
 
+    async def run_stream(
+        self,
+        user_query: str,
+        situation_type: str | SituationType = SituationType.SUSPECTED,
+    ):
+        """SSE (Server-Sent Events)를 위한 비동기 상태 스트리밍 파이프라인"""
+        import json
+
+        if isinstance(situation_type, SituationType):
+            situation_type_key = situation_type.to_rag_key()
+            situation_type_label = situation_type.value
+        else:
+            situation_type_key = situation_type
+            situation_type_label = situation_type
+
+        yield json.dumps({"status": "processing", "step": 1, "message": "1/4 쿼리 재작성 중..."}) + "\n"
+
+        processed = await self.rag_pipeline.process_query_only(user_query)
+        rewritten = processed["rewritten_query"]
+        law_q = processed.get("mcp_law_query") or "독점규제 공정거래"
+        prec_q = processed.get("mcp_prec_query") or rewritten
+
+        yield json.dumps({"status": "processing", "step": 2, "message": "2/4 RAG 검색 + MCP 법령·판례 병렬 검색 중..."}) + "\n"
+
+        loop = asyncio.get_running_loop()
+        rag_task = asyncio.create_task(self.rag_pipeline.run_search_only(user_query, situation_type_key, processed))
+        mcp_task = loop.run_in_executor(None, self.mcp_retriever.retrieve_sync, law_q, prec_q)
+        
+        rag_output, mcp_evidence = await asyncio.gather(rag_task, mcp_task)
+
+        rag_evidence = _rag_to_evidence(rag_output)
+        combined = _merge_evidence(rag_evidence, mcp_evidence)
+
+        yield json.dumps({"status": "processing", "step": 3, "message": "3/4 전문 AI 에이전트(법령/의결서/판례/사례) 병렬 분석 중..."}) + "\n"
+
+        reports = await loop.run_in_executor(
+            None,
+            self.step3_analyze,
+            user_query, rag_output.rewritten_query, combined
+        )
+
+        yield json.dumps({"status": "processing", "step": 4, "message": "4/4 최종 종합 법률 보고서 생성 중..."}) + "\n"
+
+        final = await loop.run_in_executor(
+            None,
+            self.step4_synthesize,
+            user_query, rag_output.rewritten_query, situation_type_label, reports
+        )
+
+        yield json.dumps({"status": "complete", "data": final.model_dump()}) + "\n"
+
     # ── 내부 헬퍼 ─────────────────────────────────────────
 
     def _run_agents_parallel(
@@ -238,14 +330,21 @@ class LegalAnalysisPipeline:
         evidence: ExternalEvidence,
     ) -> list[AgentReport]:
         reports: list[AgentReport] = [None] * len(self.agents)  # type: ignore
+
+        def _run_single_agent(idx, agent):
+            t = time.time()
+            result = agent.analyze(original_query, rewritten_query, evidence)
+            print(f"    [{agent.agent_name}] 완료 ⏱ {time.time() - t:.1f}초")
+            return idx, result
+
         with ThreadPoolExecutor(max_workers=len(self.agents)) as executor:
-            futures = {
-                executor.submit(agent.analyze, original_query, rewritten_query, evidence): idx
+            futures = [
+                executor.submit(_run_single_agent, idx, agent)
                 for idx, agent in enumerate(self.agents)
-            }
+            ]
             for future in as_completed(futures):
-                idx = futures[future]
-                reports[idx] = future.result()
+                idx, result = future.result()
+                reports[idx] = result
         return reports
 
     def _run_agents_sequential(

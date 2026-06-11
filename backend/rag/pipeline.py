@@ -1,3 +1,4 @@
+import asyncio
 from rag.db.scenario_db import ScenarioDB
 from rag.query.query_processor import process_query
 from rag.retrieval.hybrid_search import HybridSearch
@@ -25,8 +26,20 @@ class RAGPipeline:
         print("RAG 파이프라인 초기화 완료")
 
     async def run(self, user_query: str, situation_type: str) -> RAGOutput:
+        """전체 RAG 파이프라인 실행 (쿼리 재작성 포함)"""
         print("1. Query Processing 중...")
         processed = await process_query(user_query)
+        return await self.run_search_only(user_query, situation_type, processed)
+
+    @staticmethod
+    async def process_query_only(user_query: str) -> dict:
+        """쿼리 재작성만 수행 (MCP 병렬 실행을 위해 분리)"""
+        return await process_query(user_query)
+
+    async def run_search_only(
+        self, user_query: str, situation_type: str, processed: dict
+    ) -> RAGOutput:
+        """쿼리 재작성 결과를 받아 검색/리랭킹/필터링만 수행"""
         rewritten_query = processed["rewritten_query"]
         query_intent = processed.get("intent")
         mcp_law_query = processed.get("mcp_law_query")
@@ -45,18 +58,18 @@ class RAGPipeline:
             top_k=10
         )
 
-        print("4. LLM Filter 중...")
-        filtered = await llm_filter(
-            query=rewritten_query,
-            docs=reranked,
-            top_k=5
-        )
+        print("4. LLM Filter + 엑셀 QA 검색 병렬 실행 중...")
 
-        print("5. 엑셀 QA 검색 중...")
-        scenario_results = self.scenario_db.search(
-            query=rewritten_query,
-            situation_type=situation_type,
-            top_k=3
+        async def _scenario_search():
+            return self.scenario_db.search(
+                query=rewritten_query,
+                situation_type=situation_type,
+                top_k=3
+            )
+
+        filtered, scenario_results = await asyncio.gather(
+            llm_filter(query=rewritten_query, docs=reranked, top_k=5),
+            _scenario_search(),
         )
 
         print("6. RAGOutput 구성 중...")

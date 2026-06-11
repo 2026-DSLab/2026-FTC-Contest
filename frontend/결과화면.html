@@ -993,10 +993,267 @@
     @media (max-width: 480px) {
       .report-wrapper { padding: 1rem 1rem 2rem; }
     }
+
+    /* ===== Stream Overlay (Premium) ===== */
+    #stream-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.6s ease;
+      background: linear-gradient(-45deg, #e8f3ff, #f3f0ff, #e8f3ff, #f1f3f5);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+    }
+    
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    #stream-overlay[hidden] {
+      display: none;
+    }
+
+    .stream-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 24px;
+      padding: 3rem 2.5rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 1.5rem;
+    }
+
+    /* Radar / Scanner Animation */
+    .scanner-box {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      background: var(--white);
+      border-radius: 20px;
+      box-shadow: inset 0 0 0 2px var(--blue-100), 0 10px 20px rgba(43, 125, 233, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+    .scanner-box svg {
+      width: 32px;
+      height: 32px;
+      color: var(--blue-600);
+      z-index: 2;
+    }
+    .scanner-line {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(transparent, transparent, transparent, rgba(43, 125, 233, 0.2));
+      animation: scanRotate 2s linear infinite;
+      z-index: 1;
+    }
+    @keyframes scanRotate {
+      100% { transform: rotate(360deg); }
+    }
+
+    .stream-status {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--gray-800);
+      margin-bottom: 0.5rem;
+      text-align: center;
+      letter-spacing: -0.02em;
+    }
+
+    .stream-message {
+      font-size: 0.95rem;
+      color: var(--gray-500);
+      text-align: center;
+      margin-bottom: 2.5rem;
+      line-height: 1.5;
+      min-height: 2.85em; /* 2 lines max */
+    }
+
+    /* Step Timeline */
+    .step-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      position: relative;
+      margin-bottom: 2.5rem;
+      padding: 0 10px;
+    }
+
+    .step-line {
+      position: absolute;
+      top: 50%;
+      left: 30px;
+      right: 30px;
+      height: 3px;
+      background: var(--gray-200);
+      z-index: 1;
+      transform: translateY(-50%);
+      border-radius: 3px;
+    }
+    .step-line-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--blue-400), var(--blue-600));
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .step-item {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .step-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--white);
+      border: 3px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      color: var(--gray-400);
+      font-weight: 700;
+      transition: all 0.4s ease;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+
+    .step-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--gray-400);
+      text-align: center;
+      transition: color 0.4s ease;
+    }
+
+    .step-item.active .step-icon {
+      border-color: var(--blue-500);
+      color: var(--blue-600);
+      box-shadow: 0 0 0 4px rgba(43, 125, 233, 0.15);
+      animation: pulse-step 2s infinite;
+    }
+    .step-item.active .step-label { color: var(--gray-800); }
+
+    .step-item.completed .step-icon {
+      background: var(--blue-500);
+      border-color: var(--blue-500);
+      color: var(--white);
+    }
+    .step-item.completed .step-label { color: var(--blue-600); }
+
+    @keyframes pulse-step {
+      0% { box-shadow: 0 0 0 0 rgba(43, 125, 233, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(43, 125, 233, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(43, 125, 233, 0); }
+    }
+
+    /* Rotating Tips */
+    .tip-box {
+      background: var(--blue-50);
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+      width: 100%;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .tip-box svg {
+      width: 18px;
+      height: 18px;
+      color: var(--blue-600);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .tip-text {
+      font-size: 0.8rem;
+      color: var(--gray-700);
+      line-height: 1.5;
+      animation: fadeInOut 4s infinite;
+    }
+
+    @keyframes fadeInOut {
+      0%, 5% { opacity: 0; transform: translateY(4px); }
+      15%, 85% { opacity: 1; transform: translateY(0); }
+      95%, 100% { opacity: 0; transform: translateY(-4px); }
+    }
   </style>
 </head>
 
 <body>
+
+  <!-- Stream Overlay (Premium UI) -->
+  <div id="stream-overlay" hidden>
+    <div class="stream-card">
+      <div class="scanner-box">
+        <div class="scanner-line"></div>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+        </svg>
+      </div>
+
+      <div class="stream-status">AI 법률 리스크 진단 중</div>
+      <div class="stream-message" id="stream-message">입력하신 상황을 분석하기 위해<br>전문 에이전트들이 준비하고 있습니다.</div>
+
+      <!-- Step Indicator -->
+      <div class="step-indicator">
+        <div class="step-line"><div class="step-line-fill" id="step-line-fill"></div></div>
+        
+        <div class="step-item active" id="step-1">
+          <div class="step-icon">1</div>
+          <div class="step-label">상황<br>분석</div>
+        </div>
+        <div class="step-item" id="step-2">
+          <div class="step-icon">2</div>
+          <div class="step-label">법령·판례<br>검색</div>
+        </div>
+        <div class="step-item" id="step-3">
+          <div class="step-icon">3</div>
+          <div class="step-label">AI 전문<br>에이전트</div>
+        </div>
+        <div class="step-item" id="step-4">
+          <div class="step-icon">4</div>
+          <div class="step-label">종합 보고서<br>생성</div>
+        </div>
+      </div>
+
+      <!-- Rotating Tips -->
+      <div class="tip-box">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.516 0c.85.493 1.509 1.333 1.509 2.316V18" />
+        </svg>
+        <div class="tip-text" id="rolling-tip">
+          수만 건의 공정위 심결례와 판례를 실시간으로 탐색합니다.
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Header: 이력 버튼 제거 -->
   <header>
@@ -1674,28 +1931,128 @@
     }
 
     const storedResult = getStoredResult();
-    if (storedResult) applyResult(storedResult);
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryParam = urlParams.get('query');
+    const situationParam = urlParams.get('situation');
+
+    let isStreaming = false;
+
+    if (queryParam && situationParam) {
+      // 파라미터가 있으면 스트리밍 모드 진입
+      isStreaming = true;
+      const overlay = document.getElementById('stream-overlay');
+      const messageEl = document.getElementById('stream-message');
+      overlay.hidden = false;
+
+      // EventSource 연결
+      const sseUrl = `/diagnose_stream?query=${encodeURIComponent(queryParam)}&situation=${encodeURIComponent(situationParam)}`;
+      const evtSource = new EventSource(sseUrl);
+
+      // Tip 롤링 로직
+      const tips = [
+        "수만 건의 공정위 심결례와 판례를 실시간으로 탐색합니다.",
+        "💡 위반 시 최대 관련 매출액의 4% 이하의 과징금이 부과될 수 있습니다.",
+        "💡 공정위 적발 사례의 60% 이상은 사전 내부통제 미비에서 발생합니다.",
+        "4명의 전문 AI 에이전트가 각자의 관점에서 교차 검증을 진행합니다.",
+        "💡 거래 개시 전 명확한 서면 계약서 교부는 필수적입니다.",
+        "AI가 유사한 과거 제재 사례를 찾아 위험도를 스코어링하고 있습니다."
+      ];
+      let tipIndex = 0;
+      const tipEl = document.getElementById('rolling-tip');
+      const tipInterval = setInterval(() => {
+        tipIndex = (tipIndex + 1) % tips.length;
+        tipEl.textContent = tips[tipIndex];
+      }, 4000);
+
+      evtSource.onmessage = function(event) {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.status === 'processing') {
+            messageEl.innerHTML = escapeHTML(data.message).replace(/\n/g, '<br>');
+            
+            // Step UI 업데이트
+            const currentStep = parseInt(data.step);
+            if (currentStep) {
+              const fill = document.getElementById('step-line-fill');
+              fill.style.width = ((currentStep - 1) / 3 * 100) + '%';
+              
+              for (let i = 1; i <= 4; i++) {
+                const stepItem = document.getElementById(`step-${i}`);
+                if (!stepItem) continue;
+                if (i < currentStep) {
+                  stepItem.className = 'step-item completed';
+                } else if (i === currentStep) {
+                  stepItem.className = 'step-item active';
+                } else {
+                  stepItem.className = 'step-item';
+                }
+              }
+            }
+
+          } else if (data.status === 'complete') {
+            evtSource.close();
+            clearInterval(tipInterval);
+            sessionStorage.setItem('diagnoseResult', JSON.stringify(data.data));
+            applyResult(data.data);
+            
+            // URL 파라미터 제거
+            window.history.replaceState({}, '', '결과화면.html');
+            
+            // 오버레이 숨김 및 애니메이션 트리거
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+              overlay.hidden = true;
+              startAnimations();
+            }, 600);
+          } else if (data.status === 'error') {
+            evtSource.close();
+            clearInterval(tipInterval);
+            messageEl.innerHTML = `<span style="color:var(--red-500)">오류 발생: ${escapeHTML(data.message)}</span><br><br><a href="질문화면.html" style="color:var(--blue-500);text-decoration:underline;">돌아가기</a>`;
+          }
+        } catch (err) {
+          console.error("SSE 파싱 오류:", err);
+        }
+      };
+
+      evtSource.onerror = function(err) {
+        evtSource.close();
+        clearInterval(tipInterval);
+        messageEl.innerHTML = `<span style="color:var(--red-500)">서버와의 연결이 끊어졌습니다.</span><br><br><a href="질문화면.html" style="color:var(--blue-500);text-decoration:underline;">돌아가기</a>`;
+      };
+    } else if (storedResult) {
+      applyResult(storedResult);
+    }
 
     const duration = 1200;
-    const startTime = performance.now();
+    let startTime = 0;
 
     function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
     function animateScore(now) {
+      if (!startTime) startTime = now;
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
       scoreEl.textContent = Math.round(easeOutCubic(progress) * target);
       if (progress < 1) requestAnimationFrame(animateScore);
     }
 
-    requestAnimationFrame(animateScore);
+    function startAnimations() {
+      startTime = 0;
+      requestAnimationFrame(animateScore);
+      setTimeout(() => {
+        bars.forEach(({ bar, width }) => {
+          const el = document.getElementById(bar);
+          if (el) el.style.width = width + '%';
+        });
+      }, 400);
+    }
 
-    setTimeout(() => {
-      bars.forEach(({ bar, width }) => {
-        const el = document.getElementById(bar);
-        if (el) el.style.width = width + '%';
-      });
-    }, 400);
+    // 스트리밍이 아닐 경우 즉시 애니메이션 시작
+    if (!isStreaming) {
+      startAnimations();
+    }
+
+
 
     // Guide overlay
     const guideOverlay = document.getElementById('guide-overlay');

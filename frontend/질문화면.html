@@ -328,40 +328,20 @@
     const submitBtn = document.getElementById('submit-btn');
     const errorMsg = document.getElementById('error-msg');
 
-    submitBtn.addEventListener('click', async function () {
+    submitBtn.addEventListener('click', function () {
       const text = textarea.value.trim();
       if (!text) { textarea.focus(); return; }
 
       submitBtn.disabled = true;
-      submitBtn.innerHTML = `<svg class="spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182"/></svg> 분석 중...`;
+      submitBtn.innerHTML = `<svg class="spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182"/></svg> 준비 중...`;
       submitBtn.style.opacity = '0.8';
       errorMsg.style.display = 'none';
 
-      try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_query: text, situation_type: selectedSituationType })
-        });
-
-        if (response.status === 400) {
-          const err = await response.json();
-          throw new Error(err.detail || '관련 없는 질문입니다.');
-        }
-        if (!response.ok) throw new Error('서버 오류: ' + response.status);
-
-        const result = await response.json();
-        sessionStorage.setItem('diagnoseResult', JSON.stringify(result));
-        window.location.href = '결과화면.html';
-
-      } catch (err) {
-        errorMsg.textContent = '오류가 발생했습니다: ' + err.message;
-        errorMsg.style.display = 'block';
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = `진단 시작<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>`;
-        submitBtn.style.opacity = '1';
-      }
+      const params = new URLSearchParams({
+        query: text,
+        situation: selectedSituationType
+      });
+      window.location.href = `결과화면.html?${params.toString()}`;
     });
 
     textarea.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitBtn.click(); } });

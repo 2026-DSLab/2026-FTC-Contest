@@ -18,7 +18,7 @@ REPORT_TOOL = {
             "properties": {
                 "analysis": {
                     "type": "string",
-                    "description": "상세 법률 분석 내용 (마크다운 형식)",
+                    "description": "상세 법률 분석 내용 (마크다운 형식, 2~3단락 내외로 핵심만 간결하게 작성)",
                 },
                 "confidence_score": {
                     "type": "integer",
@@ -57,7 +57,7 @@ def _format_evidence(evidence: ExternalEvidence) -> str:
             if doc.score is not None:
                 header += f" (관련도: {doc.score:.3f})"
             parts.append(f"### {header}")
-            parts.append(doc.content[:3000])
+            parts.append(doc.content[:1500])
 
     if evidence.scenario_docs:
         parts.append("## 유사 시나리오 Q&A")
@@ -73,19 +73,19 @@ def _format_evidence(evidence: ExternalEvidence) -> str:
         parts.append("## MCP 검색 법령")
         for doc in evidence.laws:
             parts.append(f"### {doc.title or '(제목 없음)'}")
-            parts.append(doc.content[:3000])
+            parts.append(doc.content[:1500])
 
     if evidence.precedents:
         parts.append("## MCP 검색 판례")
         for doc in evidence.precedents:
             parts.append(f"### {doc.title or '(제목 없음)'}")
-            parts.append(doc.content[:3000])
+            parts.append(doc.content[:1500])
 
     if evidence.ftc_decisions:
         parts.append("## MCP 검색 공정위 결정문")
         for doc in evidence.ftc_decisions:
             parts.append(f"### {doc.title or '(제목 없음)'}")
-            parts.append(doc.content[:3000])
+            parts.append(doc.content[:1500])
 
     return "\n\n".join(parts) if parts else "검색된 외부 자료 없음"
 
