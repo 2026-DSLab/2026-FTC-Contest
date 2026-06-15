@@ -91,8 +91,7 @@ async def process_query(user_query: str) -> dict:
 
     if not result.get("is_relevant", True):
         raise IrrelevantQueryError(
-            "공정거래·기업 컴플라이언스와 관련된 질문만 답변할 수 있습니다. "
-            "불공정거래, 계약 리스크, 과징금, 하도급·가맹·표시광고 등 관련 주제로 질문해 주세요."
+            "공정거래 및 기업 법무와 관련된 질문만 분석할 수 있습니다. 구체적인 거래 상황을 다시 입력해 주세요."
         )
 
     return {

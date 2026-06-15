@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from agent_pipeline import LegalAnalysisPipeline
 from models import SituationType
-from rag.query.query_processor import IrrelevantQueryError
+from rag.query.query_processor import process_query, IrrelevantQueryError
 
 router = APIRouter()
 pipeline = LegalAnalysisPipeline()
@@ -54,6 +54,24 @@ def diagnose(req: DiagnoseRequest):
     save_path.write_text(json.dumps(save_data, ensure_ascii=False, indent=2), encoding="utf-8")
 
     return JSONResponse(content=data)
+
+@router.post("/validate_query")
+async def validate_query(req: DiagnoseRequest):
+    situation_str = SITUATION_MAP.get(req.situation_type, req.situation_type)
+    try:
+        situation = SituationType(situation_str)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid situation_type")
+        
+    try:
+        # 쿼리 재작성 모듈을 직접 호출하여 관련성이 있는지 검증
+        await process_query(req.user_query)
+        return JSONResponse(content={"status": "ok"})
+    except IrrelevantQueryError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
 
 @router.get("/diagnose_stream")
 async def diagnose_stream(query: str, situation: str):
