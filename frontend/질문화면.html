@@ -167,9 +167,9 @@
     <div class="situation-selector" data-guide data-guide-no="1">
       <div class="situation-label">상황 유형 선택</div>
       <div class="situation-buttons">
-        <button class="situation-btn" data-type="contract_before">계약 체결 전</button>
+        <button class="situation-btn active" data-type="contract_before">계약 체결 전</button>
         <button class="situation-btn" data-type="in_progress">거래 진행 중</button>
-        <button class="situation-btn active" data-type="suspected">위반 의심</button>
+        <button class="situation-btn" data-type="suspected">위반 의심</button>
         <button class="situation-btn" data-type="regular_check">정기 점검</button>
       </div>
     </div>
@@ -309,7 +309,7 @@
     // ── API URL 동적 설정 ──
     const API_URL = window.location.origin + "/diagnose";
 
-    let selectedSituationType = "suspected";
+    let selectedSituationType = "contract_before";
 
     const textarea = document.getElementById('question-input');
     const charCount = document.getElementById('char-count');
