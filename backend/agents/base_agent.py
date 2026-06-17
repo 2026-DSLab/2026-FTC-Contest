@@ -33,7 +33,7 @@ REPORT_TOOL = {
                 },
                 "source_description": {
                     "type": "string",
-                    "description": "분석에 활용한 주요 법령·의결서·판례명 (최대 2줄, 줄바꿈은 \\n 사용. 예: '공정거래법 제45조\\n시행령 별표2')",
+                    "description": "분석에 활용한 주요 법령·의결서·판례의 정식 명칭만 기재 (최대 2줄, 줄바꿈은 \\n). 예: '대규모유통업법 제11조\\n동법 시행령 제9조'. 분석 의견·추상적 표현·'유사 판례 분석' 같은 문장은 절대 기재 금지. 외부 자료에서 확인된 항목만 기재하고, 없으면 빈 문자열.",
                 },
                 "limitations": {
                     "type": "string",
@@ -57,7 +57,7 @@ def _format_evidence(evidence: ExternalEvidence) -> str:
             if doc.score is not None:
                 header += f" (관련도: {doc.score:.3f})"
             parts.append(f"### {header}")
-            parts.append(doc.content[:1500])
+            parts.append(doc.content[:2000])
 
     if evidence.scenario_docs:
         parts.append("## 유사 시나리오 Q&A")
@@ -73,21 +73,23 @@ def _format_evidence(evidence: ExternalEvidence) -> str:
         parts.append("## MCP 검색 법령")
         for doc in evidence.laws:
             parts.append(f"### {doc.title or '(제목 없음)'}")
-            parts.append(doc.content[:1500])
+            parts.append(doc.content[:3000])
 
     if evidence.precedents:
         parts.append("## MCP 검색 판례")
         for doc in evidence.precedents:
             parts.append(f"### {doc.title or '(제목 없음)'}")
-            parts.append(doc.content[:1500])
+            parts.append(doc.content[:3000])
 
     if evidence.ftc_decisions:
         parts.append("## MCP 검색 공정위 결정문")
         for doc in evidence.ftc_decisions:
             parts.append(f"### {doc.title or '(제목 없음)'}")
-            parts.append(doc.content[:1500])
+            parts.append(doc.content[:3000])
 
-    return "\n\n".join(parts) if parts else "검색된 외부 자료 없음"
+    if not parts:
+        return "검색된 외부 자료 없음. 분석을 추측으로 진행하지 말고 자료 부족을 명시하세요."
+    return "\n\n".join(parts)
 
 
 class BaseAgent(ABC):
@@ -120,6 +122,14 @@ class BaseAgent(ABC):
             "\n\n**[인용 규칙] 위 '외부 자료' 섹션에 실제로 등장한 문서만 근거로 사용하세요. "
             "자료에 없는 판례번호·의결서번호·법조문 번호를 임의로 생성하지 마세요. "
             "관련 자료가 부족하면 분석을 추측하지 말고 '검색된 자료 부족으로 판단 유보'라고 명시하세요.**"
+            "\n\n**[판례 인용 금지 규칙] 외부 자료에 사건번호(예: 2022나XXXXX) 또는 선고일+법원명이 명시된 경우에만 "
+            "해당 판례를 구체적으로 인용하세요. 사건번호가 확인되지 않으면 '○○법원 ○○년경 판결' 형태의 "
+            "날짜·번호를 절대 생성하지 말고, '판례 경향상 ~로 판단될 수 있음' 수준으로만 서술하세요.**"
+            "\n\n**[source_description 금지 규칙] source_description 필드에는 외부 자료에서 "
+            "제목·문서번호가 명시적으로 확인된 항목만 기재하세요. "
+            "사건번호(숫자두XXXXX 형태)는 외부 자료 원문에 해당 번호가 직접 등장한 경우에만 기재하고, "
+            "그렇지 않으면 절대 기재하지 마세요. 판례 경향을 언급할 경우 사건번호 없이 "
+            "'대규모유통업법 관련 판례 경향' 수준으로만 서술하세요.**"
         )
         response = self.client.chat.completions.create(
             model=self.model,
@@ -132,7 +142,21 @@ class BaseAgent(ABC):
             ],
         )
 
-        data = json.loads(response.choices[0].message.tool_calls[0].function.arguments)
+        try:
+            tool_calls = response.choices[0].message.tool_calls
+            if not tool_calls:
+                raise ValueError("tool_calls가 비어 있습니다.")
+            data = json.loads(tool_calls[0].function.arguments)
+        except (ValueError, json.JSONDecodeError, IndexError, AttributeError) as e:
+            return AgentReport(
+                agent_type=self.agent_type,
+                agent_name=self.agent_name,
+                analysis=f"응답 파싱 실패: {e}",
+                confidence_score=0,
+                key_findings=[],
+                source_description=None,
+                limitations="LLM 응답 파싱 오류",
+            )
 
         return AgentReport(
             agent_type=self.agent_type,

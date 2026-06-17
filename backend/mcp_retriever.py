@@ -21,16 +21,17 @@ LAW_SERVER_PATH = Path(__file__).parent / "law_server.py"
 # 검색 결과 개수 (필요시 조정)
 SEARCH_DISPLAY = 5
 # 본문 가져올 최대 문서 수
-MAX_DETAIL_FETCH = 3
+MAX_DETAIL_FETCH = 5
 
 
-def _parse_search_results(xml_text: str) -> list[dict[str, str]]:
+def _parse_search_results(xml_text: str, source: str = "") -> list[dict[str, str]]:
     """MCP 서버가 반환하는 XML에서 검색 결과 목록을 파싱합니다."""
     try:
         import re
         xml_text = re.sub(r"&(?!amp;|lt;|gt;|quot;|apos;)", "&amp;", xml_text)
         root = ET.fromstring(xml_text)
-    except ET.ParseError:
+    except ET.ParseError as e:
+        print(f"[mcp_retriever] XML 파싱 실패{f' ({source})' if source else ''}: {e}")
         return []
 
     skip = {"totalCnt", "pageSize", "pageIndex", "query", "numOfRows"}
@@ -75,7 +76,7 @@ class MCPRetriever:
                 law_xml = await self._call_tool(
                     session, "search_law", {"query": law_query, "display": self.display}
                 )
-                laws = _parse_search_results(law_xml)
+                laws = _parse_search_results(law_xml, source=f"법령 검색: {law_query}")
                 for item in laws[: self.max_detail]:
                     mst = item.get("법령일련번호") or item.get("MST") or item.get("mst")
                     # XML 태그: 법령명한글 (언더스코어 없음)
@@ -96,7 +97,7 @@ class MCPRetriever:
                 prec_xml = await self._call_tool(
                     session, "search_precedent", {"query": prec_query, "display": self.display}
                 )
-                precs = _parse_search_results(prec_xml)
+                precs = _parse_search_results(prec_xml, source=f"판례 검색: {prec_query}")
                 for item in precs[: self.max_detail]:
                     pid = item.get("판례일련번호") or item.get("ID") or item.get("id")
                     title = item.get("사건명") or item.get("판례명") or item.get("title", "")
