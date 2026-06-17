@@ -285,39 +285,68 @@ class LegalAnalysisPipeline:
             situation_type_key = situation_type
             situation_type_label = situation_type
 
-        yield json.dumps({"status": "processing", "step": 1, "message": "1/4 쿼리 재작성 중..."}) + "\n"
+        step1_message = "1/4 쿼리 재작성 중..."
+        yield json.dumps({"status": "processing", "step": 1, "message": step1_message}) + "\n"
 
-        processed = await self.rag_pipeline.process_query_only(user_query)
+        query_task = asyncio.create_task(self.rag_pipeline.process_query_only(user_query))
+        while True:
+            try:
+                processed = await asyncio.wait_for(asyncio.shield(query_task), timeout=15)
+                break
+            except asyncio.TimeoutError:
+                yield json.dumps({"status": "processing", "step": 1, "message": step1_message}) + "\n"
+
         rewritten = processed["rewritten_query"]
         law_q = processed.get("mcp_law_query") or "독점규제 공정거래"
         prec_q = processed.get("mcp_prec_query") or rewritten
 
-        yield json.dumps({"status": "processing", "step": 2, "message": "2/4 RAG 검색 + MCP 법령·판례 병렬 검색 중..."}) + "\n"
+        step2_message = "2/4 RAG 검색 + MCP 법령·판례 병렬 검색 중..."
+        yield json.dumps({"status": "processing", "step": 2, "message": step2_message}) + "\n"
 
         loop = asyncio.get_running_loop()
         rag_task = asyncio.create_task(self.rag_pipeline.run_search_only(user_query, situation_type_key, processed))
         mcp_task = loop.run_in_executor(None, self.mcp_retriever.retrieve_sync, law_q, prec_q)
         
-        rag_output, mcp_evidence = await asyncio.gather(rag_task, mcp_task)
+        step2_task = asyncio.gather(rag_task, mcp_task)
+        while True:
+            try:
+                rag_output, mcp_evidence = await asyncio.wait_for(asyncio.shield(step2_task), timeout=15)
+                break
+            except asyncio.TimeoutError:
+                yield json.dumps({"status": "processing", "step": 2, "message": step2_message}) + "\n"
 
         rag_evidence = _rag_to_evidence(rag_output)
         combined = _merge_evidence(rag_evidence, mcp_evidence)
 
-        yield json.dumps({"status": "processing", "step": 3, "message": "3/4 전문 AI 에이전트(법령/의결서/판례/사례) 병렬 분석 중..."}) + "\n"
+        step3_message = "3/4 전문 AI 에이전트(법령/의결서/판례/사례) 병렬 분석 중..."
+        yield json.dumps({"status": "processing", "step": 3, "message": step3_message}) + "\n"
 
-        reports = await loop.run_in_executor(
+        reports_future = loop.run_in_executor(
             None,
             self.step3_analyze,
             user_query, rag_output.rewritten_query, combined
         )
+        while True:
+            try:
+                reports = await asyncio.wait_for(asyncio.shield(reports_future), timeout=15)
+                break
+            except asyncio.TimeoutError:
+                yield json.dumps({"status": "processing", "step": 3, "message": step3_message}) + "\n"
 
-        yield json.dumps({"status": "processing", "step": 4, "message": "4/4 최종 종합 법률 보고서 생성 중..."}) + "\n"
+        step4_message = "4/4 최종 종합 법률 보고서 생성 중..."
+        yield json.dumps({"status": "processing", "step": 4, "message": step4_message}) + "\n"
 
-        final = await loop.run_in_executor(
+        final_future = loop.run_in_executor(
             None,
             self.step4_synthesize,
             user_query, rag_output.rewritten_query, situation_type_label, reports
         )
+        while True:
+            try:
+                final = await asyncio.wait_for(asyncio.shield(final_future), timeout=15)
+                break
+            except asyncio.TimeoutError:
+                yield json.dumps({"status": "processing", "step": 4, "message": step4_message}) + "\n"
 
         yield json.dumps({"status": "complete", "data": final.model_dump()}) + "\n"
 
