@@ -116,13 +116,18 @@ class BaseAgent(ABC):
             f"## 외부 자료\n{evidence_text}"
         )
 
+        grounding = (
+            "\n\n**[인용 규칙] 위 '외부 자료' 섹션에 실제로 등장한 문서만 근거로 사용하세요. "
+            "자료에 없는 판례번호·의결서번호·법조문 번호를 임의로 생성하지 마세요. "
+            "관련 자료가 부족하면 분석을 추측하지 말고 '검색된 자료 부족으로 판단 유보'라고 명시하세요.**"
+        )
         response = self.client.chat.completions.create(
             model=self.model,
             max_tokens=2048,
             tools=[REPORT_TOOL],
             tool_choice={"type": "function", "function": {"name": "output_report"}},
             messages=[
-                {"role": "system", "content": self.system_prompt},
+                {"role": "system", "content": self.system_prompt + grounding},
                 {"role": "user", "content": user_message},
             ],
         )

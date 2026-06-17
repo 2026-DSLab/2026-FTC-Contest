@@ -45,7 +45,9 @@ Confidence Score를 가중치로 활용하여 통합하고 최종 법률 의견�
 - 불필요한 서론/결론은 생략하세요.
 - 이 분석은 법률 참고자료이며 공식 법률 자문을 대체하지 않습니다.
 - 불확실한 부분은 명확히 표시하고 전문 변호사 상담을 권고하세요.
-- 체크리스트 항목은 사용자가 실무에서 즉시 활용할 수 있도록 구체적으로 작성하세요."""
+- 체크리스트 항목은 사용자가 실무에서 즉시 활용할 수 있도록 구체적으로 작성하세요.
+- [인용 규칙] legal_basis의 title·quote·cite, similar_cases의 title·description은 반드시 아래 에이전트 보고서의 '인용 출처' 또는 분석 본문에 실제로 등장한 내용만 사용하세요. 보고서에 없는 판례번호·의결서번호를 임의로 생성하지 마세요. 근거 자료가 부족하면 해당 필드를 빈 배열로 두세요.
+"""
 # ──────────────────────────────────────────────
 
 _SYNTHESIS_TOOL = {
@@ -233,6 +235,8 @@ def _format_agent_reports(reports: list[AgentReport]) -> str:
             f"{r.analysis}\n\n"
             f"**핵심 발견:**\n" + "\n".join(f"- {f}" for f in r.key_findings)
         )
+        if r.source_description:
+            section += f"\n\n**인용 출처:** {r.source_description}"
         if r.limitations:
             section += f"\n\n**한계:** {r.limitations}"
         parts.append(section)
