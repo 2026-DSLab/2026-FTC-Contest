@@ -32,7 +32,7 @@ Confidence Score를 가중치로 활용하여 통합하고 최종 법률 의견�
 2. 리스크 스코어 산정: 법적 위험 수준을 0~100 점수로 산정하세요 (0=위험 없음, 100=매우 위험).
 3. 신뢰도 산정: 4개 에이전트 점수를 고려하여 전체 분석의 신뢰도를 0~100으로 산정하세요.
 4. 구조화된 근거 작성: 관련 법령·의결서 중 가장 치명적인 최대 2건만 정리하세요.
-5. 유사 사례 정리: 가장 유사한 사례 최대 2건만 정리하세요.
+5. 유사 사례 정리: 아래 "## 유사 의결서 목록" 섹션에서만 최대 2건 선택하세요.
 6. 법리 해석 작성: 핵심 쟁점을 2단락 내외로 아주 짧고 간결하게 설명하세요.
 7. 체크리스트 작성: 사용자가 즉시 실행할 수 있는 컴플라이언스 체크리스트를 작성하세요.
    - 🔴 필수(high): 즉시 점검·조치가 필요한 사항 (3개 이상)
@@ -47,6 +47,12 @@ Confidence Score를 가중치로 활용하여 통합하고 최종 법률 의견�
 - 불확실한 부분은 명확히 표시하고 전문 변호사 상담을 권고하세요.
 - 체크리스트 항목은 사용자가 실무에서 즉시 활용할 수 있도록 구체적으로 작성하세요.
 - [인용 규칙] legal_basis의 title·quote·cite, similar_cases의 title·description은 반드시 아래 에이전트 보고서의 '인용 출처' 또는 분석 본문에 실제로 등장한 내용만 사용하세요. 보고서에 없는 판례번호·의결서번호를 임의로 생성하지 마세요. 근거 자료가 부족하면 해당 필드를 빈 배열로 두세요.
+
+**[similar_cases 규칙]**
+- "## 유사 의결서 목록" 섹션에 나열된 사례에서만 선택하세요.
+- 해당 섹션에 없는 기업명이나 사건은 절대 생성하지 마세요.
+- 현재 질문과 관련성 있는 것만 골라 title에 의결서 제목을 그대로 기재하세요.
+- 관련 사례가 없으면 빈 배열을 반환하세요.
 """
 # ──────────────────────────────────────────────
 
@@ -109,11 +115,11 @@ _SYNTHESIS_TOOL = {
                 },
                 "similar_cases": {
                     "type": "array",
-                    "description": "유사 사례 목록 (가장 유사한 것 최대 2건만)",
+                    "description": "유사 사례 목록. 반드시 '유사 의결서 목록' 섹션에 나열된 사례에서만 선택. 목록에 없는 사례는 절대 생성하지 마세요.",
                     "items": {
                         "type": "object",
                         "properties": {
-                            "title": {"type": "string", "description": "사건명 및 행위 요약"},
+                            "title": {"type": "string", "description": "의결서 목록에 제시된 제목을 그대로 기재"},
                             "description": {"type": "string", "description": "사건 상세 설명 (제재 결과 포함)"},
                             "tags": {
                                 "type": "array",
@@ -226,6 +232,25 @@ def _score_to_weather(risk_score: int) -> str:
     return "⛈️"
 
 
+def _format_similar_cases_list(resolution_chunks) -> str:
+    """RAG 의결서 목록을 AI가 직접 참조할 수 있는 형태로 포맷."""
+    if not resolution_chunks:
+        return ""
+
+    lines = ["## 유사 의결서 목록 (similar_cases는 반드시 이 목록에서만 선택)"]
+    lines.append("※ 아래 목록은 RAG 검색 시스템이 현재 질문과 유사도가 높다고 판단한 실제 공정위 의결서입니다.")
+    lines.append("※ similar_cases 필드에는 아래 목록의 제목을 그대로 사용하세요. 목록에 없는 사례는 절대 생성하지 마세요.\n")
+
+    for i, doc in enumerate(resolution_chunks[:5]):
+        title = getattr(doc, 'title', '') or '(제목 없음)'
+        content_preview = (getattr(doc, 'content', '') or '')[:200]
+        lines.append(f"[{i+1}] 의결서 제목: {title}")
+        lines.append(f"     내용 요약: {content_preview}...")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 def _format_agent_reports(reports: list[AgentReport]) -> str:
     parts = []
     for r in reports:
@@ -254,14 +279,19 @@ class SynthesisAgent:
         rewritten_query: str,
         situation_type: str,
         agent_reports: list[AgentReport],
+        resolution_chunks=None,
     ) -> FinalReport:
         reports_text = _format_agent_reports(agent_reports)
+        similar_cases_list = _format_similar_cases_list(resolution_chunks)
+
         user_message = (
             f"## 원본 질문\n{original_query}\n\n"
             f"## 재작성 질문\n{rewritten_query}\n\n"
             f"## 상황 유형\n{situation_type}\n\n"
-            f"## 전문 에이전트 분석 보고서\n\n{reports_text}"
         )
+        if similar_cases_list:
+            user_message += f"{similar_cases_list}\n\n"
+        user_message += f"## 전문 에이전트 분석 보고서\n\n{reports_text}"
 
         response = self.client.chat.completions.create(
             model=self.model,
@@ -284,7 +314,6 @@ class SynthesisAgent:
 
         risk_score = data.get("risk_score", avg_confidence)
 
-        # legal_basis 파싱
         legal_basis = [
             LegalBasisItem(
                 title=item["title"],
@@ -297,7 +326,6 @@ class SynthesisAgent:
             for item in (data.get("legal_basis") or [])
         ]
 
-        # similar_cases 파싱
         similar_cases = [
             SimilarCaseItem(
                 title=item["title"],
@@ -308,7 +336,6 @@ class SynthesisAgent:
             for item in (data.get("similar_cases") or [])
         ]
 
-        # checklist 파싱
         checklist = [
             ChecklistItem(
                 emoji=item["emoji"],
@@ -320,7 +347,6 @@ class SynthesisAgent:
             for item in (data.get("checklist") or [])
         ]
 
-        # scenarios 파싱
         scenarios_raw = data.get("scenarios")
         scenarios = None
         if scenarios_raw:

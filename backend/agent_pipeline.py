@@ -42,7 +42,7 @@ def _rag_to_evidence(rag_output) -> ExternalEvidence:
     resolution_chunks = [
         LawDocument(
             doc_type="resolution_chunk",
-            title=doc.metadata.get("제목", "") or doc.metadata.get("title", ""),
+            title=doc.metadata.get("의결서제목", "") or doc.metadata.get("제목", "") or doc.metadata.get("title", ""),
             content=doc.content,
             source_id=doc.doc_id,
             score=doc.score,
@@ -108,8 +108,6 @@ class LegalAnalysisPipeline:
         ]
         self.synthesis_agent = SynthesisAgent(self.client, model)
 
-    # ── 단계별 메서드 (개별 호출 가능) ────────────────────
-
     def step1_rag(self, user_query: str, situation_type: str):
         """Step 1: RAGPipeline 실행 (쿼리 재작성 + 의결서/시나리오 검색)"""
         return asyncio.run(self.rag_pipeline.run(user_query, situation_type))
@@ -135,13 +133,12 @@ class LegalAnalysisPipeline:
         rewritten_query: str,
         situation_type: str,
         reports: list[AgentReport],
+        resolution_chunks=None,
     ) -> FinalReport:
         """Step 4: 종합 분석 에이전트로 최종 레포트 생성"""
         return self.synthesis_agent.synthesize(
-            original_query, rewritten_query, situation_type, reports
+            original_query, rewritten_query, situation_type, reports, resolution_chunks
         )
-
-    # ── 전체 실행 ──────────────────────────────────────────
 
     def run(
         self,
@@ -176,7 +173,6 @@ class LegalAnalysisPipeline:
             print(f"[1/4] 쿼리 재작성 중 (상황유형: {situation_type_label})...")
         t0 = time.time()
 
-        # 1단계: 쿼리 재작성 (RAG, MCP 모두 이 결과가 필요)
         processed = asyncio.run(
             self.rag_pipeline.process_query_only(user_query)
         )
@@ -190,7 +186,6 @@ class LegalAnalysisPipeline:
             print(f"[2/4] RAG 검색 + MCP 법령·판례 검색 병렬 실행 중...")
         t1 = time.time()
 
-        # 2단계: RAG 검색 본체 + MCP를 진정한 병렬로 실행
         def _run_rag_search():
             _t = time.time()
             result = asyncio.run(
@@ -242,7 +237,8 @@ class LegalAnalysisPipeline:
             print(f"[4/4] 최종 종합 보고서 생성 중...")
         t3 = time.time()
         final = self.step4_synthesize(
-            user_query, rag_output.rewritten_query, situation_type_label, reports
+            user_query, rag_output.rewritten_query, situation_type_label, reports,
+            combined.resolution_chunks
         )
         if verbose:
             print(f"  → 종합 신뢰도: {final.overall_confidence}/100 | 리스크: {final.risk_level}")
@@ -306,7 +302,7 @@ class LegalAnalysisPipeline:
         loop = asyncio.get_running_loop()
         rag_task = asyncio.create_task(self.rag_pipeline.run_search_only(user_query, situation_type_key, processed))
         mcp_task = loop.run_in_executor(None, self.mcp_retriever.retrieve_sync, law_q, prec_q)
-        
+
         step2_task = asyncio.gather(rag_task, mcp_task)
         while True:
             try:
@@ -336,10 +332,13 @@ class LegalAnalysisPipeline:
         step4_message = "4/4 최종 종합 법률 보고서 생성 중..."
         yield json.dumps({"status": "processing", "step": 4, "message": step4_message}) + "\n"
 
+        _res_chunks = combined.resolution_chunks
         final_future = loop.run_in_executor(
             None,
-            self.step4_synthesize,
-            user_query, rag_output.rewritten_query, situation_type_label, reports
+            lambda: self.step4_synthesize(
+                user_query, rag_output.rewritten_query, situation_type_label, reports,
+                _res_chunks
+            )
         )
         while True:
             try:
@@ -349,8 +348,6 @@ class LegalAnalysisPipeline:
                 yield json.dumps({"status": "processing", "step": 4, "message": step4_message}) + "\n"
 
         yield json.dumps({"status": "complete", "data": final.model_dump()}) + "\n"
-
-    # ── 내부 헬퍼 ─────────────────────────────────────────
 
     def _run_agents_parallel(
         self,
