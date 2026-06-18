@@ -59,12 +59,19 @@ async def _run_diagnose_job(job_id: str, query: str, situation: SituationType):
                     "data": None,
                 }
             elif payload.get("status") == "complete":
+                result_data = payload.get("data")
+                pipeline_trace = payload.get("pipeline_trace", {})
                 diagnose_jobs[job_id] = {
                     "status": "complete",
                     "step": 4,
                     "message": "진단 결과 생성이 완료되었습니다.",
-                    "data": payload.get("data"),
+                    "data": result_data,
                 }
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                slug = query[:20].replace(" ", "_").replace("/", "-")
+                save_path = _RESULTS_DIR / f"{ts}_{slug}.json"
+                save_data = {**result_data, "_pipeline_trace": pipeline_trace}
+                save_path.write_text(json.dumps(save_data, ensure_ascii=False, indent=2), encoding="utf-8")
             elif payload.get("status") == "error":
                 diagnose_jobs[job_id] = {
                     "status": "error",
@@ -99,8 +106,7 @@ def diagnose(req: DiagnoseRequest):
         raise HTTPException(status_code=422, detail=f"situation_type은 다음 중 하나: {valid}")
     
     try:
-        result = pipeline.run(req.user_query, situation_type=situation, verbose=True)
-        pipeline_trace = {}
+        result, pipeline_trace = pipeline.run_traced(req.user_query, situation_type=situation, verbose=True)
     except IrrelevantQueryError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

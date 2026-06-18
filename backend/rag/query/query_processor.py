@@ -52,7 +52,8 @@ SYSTEM_PROMPT = """당신은 공정거래 법률 전문가입니다.
 2. rewritten_query: RAG 의결서 검색에 최적화된 형태로 재작성한 쿼리 (is_relevant=true일 때만 의미 있음)
    - 법률 용어를 포함
    - 핵심 쟁점이 드러나도록 구체화
-   - 50자 이내
+   - 질문에 여러 법적 쟁점이 있으면 모두 포함 (예: "영업금지 조항 + 조기해지 제한 가맹사업법 검토")
+   - 글자 수 제한 없음, 쟁점 누락 금지
 
 3. intent: 질문 의도 분류 (아래 4가지 중 하나, is_relevant=true일 때만 의미 있음)
    - "제재중심": 제재, 과징금, 처벌 수준 관련
@@ -62,9 +63,17 @@ SYSTEM_PROMPT = """당신은 공정거래 법률 전문가입니다.
 
 4. mcp_law_query: 법령 이름 검색에 최적화된 키워드 (is_relevant=true일 때만 의미 있음)
    - law.go.kr 법령명(lawNm) 검색이므로 반드시 실제 법령 공식 명칭이나 약칭을 사용해야 함
-   - 공정거래·플랫폼·자사우대·검색순위·불공정거래·시장지배적지위 관련 → "독점규제 공정거래"
-   - 하도급 관련 → "하도급거래", 가맹 관련 → "가맹사업", 대규모유통 관련 → "대규모유통업"
-   - "표시광고"는 표시광고법 직접 위반 사안에만 사용 (검색노출·자사우대는 공정거래법 사안)
+   - 질문에서 적용 법령을 직접 판단하여 해당 법령의 공식 약칭을 출력하세요. 아래는 참고 예시입니다:
+     · 온라인 플랫폼·검색순위 조정·자사우대·시장지배적 지위 남용·불공정거래행위·담합·기업결합 → "독점규제"
+     · 하도급·원사업자·수급사업자 → "하도급거래"
+     · 가맹·가맹본부·가맹점 → "가맹사업"
+     · 납품업체·판매촉진비용·대형마트·백화점·홈쇼핑 → "대규모유통업"
+     · 대리점·공급업자·대리점사업자 → "대리점거래"
+     · 표시광고 허위·과장·기만 광고 → "표시광고"
+     · 전자상거래·통신판매·소비자 보호 → "전자상거래"
+     · 약관·불공정 약관 조항 → "약관"
+   - 위 예시에 없는 경우: 질문에서 핵심 법령을 직접 판단하여 해당 법령의 공식 약칭을 자유롭게 출력하세요.
+   - ⚠️ 주의: "공정거래"만 단독으로 쓰면 가맹사업법·대리점법 등 무관한 법령까지 검색됨 — 일반 공정거래법 사안은 반드시 "독점규제"를 사용할 것
    - 15자 이내 핵심 법령명
 
 5. mcp_prec_query: 판례 본문 검색에 최적화된 키워드 (is_relevant=true일 때만 의미 있음)
@@ -94,9 +103,10 @@ async def process_query(user_query: str) -> dict:
             "공정거래 및 기업 법무와 관련된 질문만 분석할 수 있습니다. 구체적인 거래 상황을 다시 입력해 주세요."
         )
 
+    rewritten = result.get("rewritten_query") or user_query
     return {
-        "rewritten_query": result.get("rewritten_query", user_query),
-        "intent": result.get("intent", "법령중심"),
-        "mcp_law_query": result.get("mcp_law_query", "독점규제 공정거래"),
-        "mcp_prec_query": result.get("mcp_prec_query", result.get("rewritten_query", user_query)),
+        "rewritten_query": rewritten,
+        "intent": result.get("intent") or "법령중심",
+        "mcp_law_query": result.get("mcp_law_query") or rewritten,
+        "mcp_prec_query": result.get("mcp_prec_query") or rewritten,
     }

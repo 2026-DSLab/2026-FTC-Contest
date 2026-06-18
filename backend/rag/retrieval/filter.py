@@ -50,22 +50,27 @@ async def llm_filter(query: str, docs: list[dict], top_k: int = 5) -> list[dict]
     # 문서 목록 구성
     doc_list = ""
     for i, doc in enumerate(docs):
-        doc_list += f"\n[{i}] {doc['content'][:200]}...\n"
+        doc_list += f"\n[{i}] {doc['content'][:500]}...\n"
 
     user_message = f"사용자 질문: {query}\n\n문서 목록:{doc_list}"
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_message}
-        ],
-        response_format={"type": "json_object"},
-        temperature=0
-    )
-
-    result = json.loads(response.choices[0].message.content)
-    relevant_indices = result.get("relevant_indices", list(range(top_k)))
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_message}
+            ],
+            response_format={"type": "json_object"},
+            temperature=0
+        )
+        result = json.loads(response.choices[0].message.content)
+        relevant_indices = result.get("relevant_indices")
+        if not isinstance(relevant_indices, list):
+            raise ValueError(f"relevant_indices 형식 오류: {relevant_indices}")
+    except Exception as e:
+        print(f"[filter] LLM 필터 실패, 빈 결과 반환: {e}")
+        return []
 
     # top_k 초과하면 앞에서 자르기
     relevant_indices = relevant_indices[:top_k]

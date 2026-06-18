@@ -66,12 +66,22 @@ def _rag_to_evidence(rag_output) -> ExternalEvidence:
 
 
 def _merge_evidence(rag_evidence: ExternalEvidence, mcp_evidence: ExternalEvidence) -> ExternalEvidence:
-    """RAG 결과 + MCP 결과 통합"""
+    """RAG 결과 + MCP 결과 통합 (source_id 기준 중복 제거)"""
+    def _dedup(docs: list) -> list:
+        seen: set = set()
+        result = []
+        for doc in docs:
+            key = doc.source_id or doc.title or doc.content[:80]
+            if key not in seen:
+                seen.add(key)
+                result.append(doc)
+        return result
+
     return ExternalEvidence(
-        laws=mcp_evidence.laws,
-        precedents=mcp_evidence.precedents,
-        ftc_decisions=mcp_evidence.ftc_decisions,
-        resolution_chunks=rag_evidence.resolution_chunks,
+        laws=_dedup(mcp_evidence.laws),
+        precedents=_dedup(mcp_evidence.precedents),
+        ftc_decisions=_dedup(mcp_evidence.ftc_decisions),
+        resolution_chunks=_dedup(rag_evidence.resolution_chunks),
         scenario_docs=rag_evidence.scenario_docs,
     )
 
@@ -135,10 +145,12 @@ class LegalAnalysisPipeline:
         rewritten_query: str,
         situation_type: str,
         reports: list[AgentReport],
+        law_docs=None,
+        resolution_chunks=None,
     ) -> FinalReport:
         """Step 4: 종합 분석 에이전트로 최종 레포트 생성"""
         return self.synthesis_agent.synthesize(
-            original_query, rewritten_query, situation_type, reports
+            original_query, rewritten_query, situation_type, reports, law_docs, resolution_chunks
         )
 
     # ── 전체 실행 ──────────────────────────────────────────
@@ -242,7 +254,8 @@ class LegalAnalysisPipeline:
             print(f"[4/4] 최종 종합 보고서 생성 중...")
         t3 = time.time()
         final = self.step4_synthesize(
-            user_query, rag_output.rewritten_query, situation_type_label, reports
+            user_query, rag_output.rewritten_query, situation_type_label, reports,
+            combined.laws, combined.resolution_chunks
         )
         if verbose:
             print(f"  → 종합 신뢰도: {final.overall_confidence}/100 | 리스크: {final.risk_level}")
@@ -297,7 +310,7 @@ class LegalAnalysisPipeline:
                 yield json.dumps({"status": "processing", "step": 1, "message": step1_message}) + "\n"
 
         rewritten = processed["rewritten_query"]
-        law_q = processed.get("mcp_law_query") or "독점규제 공정거래"
+        law_q = processed.get("mcp_law_query") or rewritten
         prec_q = processed.get("mcp_prec_query") or rewritten
 
         step2_message = "2/4 RAG 검색 + MCP 법령·판례 병렬 검색 중..."
@@ -336,10 +349,14 @@ class LegalAnalysisPipeline:
         step4_message = "4/4 최종 종합 법률 보고서 생성 중..."
         yield json.dumps({"status": "processing", "step": 4, "message": step4_message}) + "\n"
 
+        _law_docs = combined.laws
+        _res_chunks = combined.resolution_chunks
         final_future = loop.run_in_executor(
             None,
-            self.step4_synthesize,
-            user_query, rag_output.rewritten_query, situation_type_label, reports
+            lambda: self.step4_synthesize(
+                user_query, rag_output.rewritten_query, situation_type_label, reports,
+                _law_docs, _res_chunks
+            )
         )
         while True:
             try:
@@ -348,7 +365,23 @@ class LegalAnalysisPipeline:
             except asyncio.TimeoutError:
                 yield json.dumps({"status": "processing", "step": 4, "message": step4_message}) + "\n"
 
-        yield json.dumps({"status": "complete", "data": final.model_dump()}) + "\n"
+        pipeline_trace = {
+            "rag": {
+                "query_intent": rag_output.query_intent,
+                "mcp_law_query": rag_output.mcp_law_query,
+                "mcp_prec_query": rag_output.mcp_prec_query,
+                "hybrid_search_results": [doc.model_dump() for doc in rag_output.hybrid_search_raw],
+                "reranked_results": [doc.model_dump() for doc in rag_output.reranked_raw],
+                "filtered_results": [doc.model_dump() for doc in rag_output.filtered_raw],
+                "scenario_results": [doc.model_dump() for doc in rag_output.scenario_docs],
+            },
+            "mcp": {
+                "laws": [doc.model_dump() for doc in mcp_evidence.laws],
+                "precedents": [doc.model_dump() for doc in mcp_evidence.precedents],
+                "ftc_decisions": [doc.model_dump() for doc in mcp_evidence.ftc_decisions],
+            },
+        }
+        yield json.dumps({"status": "complete", "data": final.model_dump(), "pipeline_trace": pipeline_trace}) + "\n"
 
     # ── 내부 헬퍼 ─────────────────────────────────────────
 
@@ -362,7 +395,19 @@ class LegalAnalysisPipeline:
 
         def _run_single_agent(idx, agent):
             t = time.time()
-            result = agent.analyze(original_query, rewritten_query, evidence)
+            try:
+                result = agent.analyze(original_query, rewritten_query, evidence)
+            except Exception as e:
+                print(f"    [{agent.agent_name}] 오류 발생: {e}")
+                result = AgentReport(
+                    agent_type=agent.agent_type,
+                    agent_name=agent.agent_name,
+                    analysis=f"에이전트 실행 중 오류 발생: {e}",
+                    confidence_score=0,
+                    key_findings=[],
+                    source_description=None,
+                    limitations="에이전트 실행 실패",
+                )
             print(f"    [{agent.agent_name}] 완료 ⏱ {time.time() - t:.1f}초")
             return idx, result
 

@@ -47,6 +47,10 @@ Confidence Score를 가중치로 활용하여 통합하고 최종 법률 의견�
 - 불확실한 부분은 명확히 표시하고 전문 변호사 상담을 권고하세요.
 - 체크리스트 항목은 사용자가 실무에서 즉시 활용할 수 있도록 구체적으로 작성하세요.
 - [인용 규칙] legal_basis의 title·quote·cite, similar_cases의 title·description은 반드시 아래 에이전트 보고서의 '인용 출처' 또는 분석 본문에 실제로 등장한 내용만 사용하세요. 보고서에 없는 판례번호·의결서번호를 임의로 생성하지 마세요. 근거 자료가 부족하면 해당 필드를 빈 배열로 두세요.
+- [legal_basis 법령 선택 규칙] '참고 법령 원문' 섹션에 법령이 있더라도, 에이전트 보고서 본문에서 해당 법령을 실제로 분석에 활용한 경우에만 legal_basis에 포함하세요. 에이전트들이 전혀 언급하지 않은 법령(예: 가맹사업법, 대리점법 등)은 참고 법령 원문 섹션에 있더라도 legal_basis에 절대 넣지 마세요.
+- [legal_basis.quote] 아래 사용자 메시지의 '참고 법령 원문' 또는 '의결서 속 법령 조문 인용' 섹션에서 해당 조문의 실제 내용을 찾아 그대로 복사해 기재하세요. '제11조(제목)' 같은 조문 제목만으로는 절대 안 됩니다 — 반드시 ① ② ③ ④ 등 항(項) 텍스트까지 포함해야 합니다. 요약·paraphrase 금지. 섹션에 해당 조문 내용이 없으면 빈 문자열("")로 두세요.
+- [legal_basis.cite] 제정·개정연도는 외부 자료에서 명시적으로 확인된 경우만 기재하세요. 확인 불가 시 법령 기관명만 기재하세요 (예: "공정거래위원회").
+- [similar_cases] 에이전트 보고서에 사건번호 또는 법원명+선고일이 모두 명시된 판례만 사용하세요. 날짜만 있고 사건번호가 없거나, 출처가 불명확한 판례는 similar_cases에 포함하지 말고 빈 배열로 두세요.
 """
 # ──────────────────────────────────────────────
 
@@ -96,8 +100,8 @@ _SYNTHESIS_TOOL = {
                                 "description": "뱃지 색상 유형 (info=파랑, warn=주황, law=보라, danger=빨강)",
                             },
                             "tag_label": {"type": "string", "description": "뱃지 텍스트 (예: 핵심 선례, 판례, 법령)"},
-                            "quote": {"type": "string", "description": "핵심 인용 문구"},
-                            "cite": {"type": "string", "description": "출처 (기관·문서번호·날짜·과징금·유사도 등)"},
+                            "quote": {"type": "string", "description": "실제 법령 조문 원문 인용. 원문이 없으면 빈 문자열. 요약·paraphrase 금지."},
+                            "cite": {"type": "string", "description": "출처 (기관명·문서번호). 제정·개정연도는 자료에서 확인된 경우만 기재. 확인 불가 시 기관명만 기재."},
                             "page_refs": {
                                 "type": "array",
                                 "items": {"type": "string"},
@@ -226,6 +230,32 @@ def _score_to_weather(risk_score: int) -> str:
     return "⛈️"
 
 
+def _format_law_docs(law_docs, resolution_chunks) -> str:
+    """MCP 법령 원문 + RAG 의결서 속 법령 인용문을 합쳐 synthesis에 전달."""
+    parts = []
+
+    if law_docs:
+        parts.append("## 참고 법령 원문 (MCP)")
+        for doc in law_docs:
+            parts.append(f"### {doc.title}")
+            parts.append(doc.content[:2000])
+
+    if resolution_chunks:
+        parts.append("## 의결서 속 법령 조문 인용 (RAG)")
+        parts.append(
+            "※ 아래 의결서에는 실제 법령 조문 원문이 인용되어 있습니다.\n"
+            "   legal_basis의 quote 필드에 넣을 때는 조문 제목(예: '제11조(판매촉진비용의 부담전가 금지)')만으로는 부족합니다.\n"
+            "   ③ ④ 등 실제 항(項) 내용을 찾아 그대로 복사하세요. (예: '제3항에 따른 납품업자 등의 판매촉진비용 분담비율은 100분의 50을 초과하여서는 아니 된다.')"
+        )
+        for doc in resolution_chunks[:5]:
+            parts.append(f"### {doc.title or '(제목 없음)'}")
+            parts.append(doc.content[:1500])
+
+    if not parts:
+        return ""
+    return "\n\n".join(parts)
+
+
 def _format_agent_reports(reports: list[AgentReport]) -> str:
     parts = []
     for r in reports:
@@ -254,14 +284,19 @@ class SynthesisAgent:
         rewritten_query: str,
         situation_type: str,
         agent_reports: list[AgentReport],
+        law_docs=None,
+        resolution_chunks=None,
     ) -> FinalReport:
         reports_text = _format_agent_reports(agent_reports)
+        law_text = _format_law_docs(law_docs, resolution_chunks)
         user_message = (
             f"## 원본 질문\n{original_query}\n\n"
             f"## 재작성 질문\n{rewritten_query}\n\n"
             f"## 상황 유형\n{situation_type}\n\n"
-            f"## 전문 에이전트 분석 보고서\n\n{reports_text}"
         )
+        if law_text:
+            user_message += f"{law_text}\n\n"
+        user_message += f"## 전문 에이전트 분석 보고서\n\n{reports_text}"
 
         response = self.client.chat.completions.create(
             model=self.model,
@@ -274,8 +309,13 @@ class SynthesisAgent:
             ],
         )
 
-        raw = response.choices[0].message.tool_calls[0].function.arguments
-        data = json.loads(raw)
+        try:
+            tool_calls = response.choices[0].message.tool_calls
+            if not tool_calls:
+                raise ValueError("tool_calls가 비어 있습니다.")
+            data = json.loads(tool_calls[0].function.arguments)
+        except (ValueError, json.JSONDecodeError, IndexError, AttributeError) as e:
+            raise RuntimeError(f"종합 에이전트 응답 파싱 실패: {e}") from e
 
         avg_confidence = (
             sum(r.confidence_score for r in agent_reports) // len(agent_reports)
