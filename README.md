@@ -1,6 +1,7 @@
 # 헤아림 (Hearim) — AI 공정거래 법률 분석 시스템
 
-<img width="600" height="285" alt="KakaoTalk_20260820_131505190" src="https://github.com/user-attachments/assets/d2f7c776-ca9f-4a1e-a43f-8535e1ac86ec" />
+<img width="600" height="285" alt="KakaoTalk_20260820_131505190" src="https://github.com/user-attachments/assets/d2f7c776-ca9f-4a1e-a43f-8535e1ac86ec" />  
+
 사용자의 공정거래 법률 질문을 받아 내부 의결서 DB(RAG) + 외부 법령 API(MCP) + 다중 AI 에이전트를 결합하여 위반 위험도와 법리 해석을 제공하는 시스템입니다.
 
 ---
